@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { SidebarTriggerOpened, SidebarTriggerClosed } from "../icons/sidebar-trigger"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -287,7 +288,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state } = useSidebar()
 
   return (
     <Button
@@ -302,7 +303,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      {state === "expanded" ? <SidebarTriggerOpened /> : <SidebarTriggerClosed />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

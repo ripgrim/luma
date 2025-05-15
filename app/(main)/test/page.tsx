@@ -17,6 +17,8 @@ import { ClippedCard } from "@/components/clipped-card"
 import RecentTradesSection from "@/components/recent-trades-section"
 import HistorySection from "@/components/history-section"
 import { RobuxIcon, TradeIcon, PlayerIcon, SearchIcon } from "@/components/icons/icons"
+import { CardMask } from "@/components/ui/card-mask";
+import { KeyIcon } from "lucide-react";
 export default function SettingsPage() {
     const { user } = useSession()
     const { data: accounts, isPending: accountsLoading } = useListAccounts();
@@ -33,11 +35,11 @@ export default function SettingsPage() {
         { status: "accepted", text: "Accepted" },
         { status: "accepted", text: "Accepted" },
         { status: "declined", text: "Declined" },
-    { status: "accepted", text: "Accepted" },
+        { status: "accepted", text: "Accepted" },
         { status: "accepted", text: "Accepted" },
         { status: "declined", text: "Declined" },
     ]
-    
+
     console.log(userData)
 
     return (
@@ -69,8 +71,17 @@ export default function SettingsPage() {
                             </ClippedCard>
                         </div>
                         <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                            <RecentTradesSection trades={trades} />
+                            <CardMask
+                                message="Authentication Required"
+                                description="Please log in to view your trades. Complete step 2 of the setup process to unlock this feature."
+                                icon={<KeyIcon className="h-10 w-10" />}
+                                opacity={0.8}
+                                blur={2.5}
+                            >
+                                <RecentTradesSection trades={trades} />
+                            </CardMask>
                             <HistorySection />
+
                         </div>
                     </div>
                 </main>

@@ -148,7 +148,7 @@ const data = {
     },
     {
       name: "Analytics",
-      url: "#",
+      url: "/analytics",
       icon: Database,
     },
   ],

@@ -29,7 +29,7 @@ export default function HomeHeader({ userName }: HomeHeaderProps) {
         <div className="relative w-full">
           <input
             type="search"
-            placeholder="Search (⌘ + k)"
+            placeholder="Search (shift + k)"
             className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-md py-2 px-4 pl-10 text-white"
             name="q"
             id="global-search"
