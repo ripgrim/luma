@@ -10,6 +10,7 @@ import type { ReactNode } from "react"
 import { Toaster, toast } from "sonner"
 
 import { authClient } from "@/lib/auth-client"
+import { TRPCProvider } from "@/providers/trpc-provider"
 
 function makeQueryClient() {
     return new QueryClient({
@@ -56,6 +57,7 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthQueryProvider>
+            <TRPCProvider>
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"
@@ -87,8 +89,9 @@ export function Providers({ children }: { children: ReactNode }) {
                         {children}
 
                         <Toaster />
-                    </AuthUIProviderTanstack>
-                </ThemeProvider>
+                        </AuthUIProviderTanstack>
+                    </ThemeProvider>
+                </TRPCProvider>
             </AuthQueryProvider>
         </QueryClientProvider>
     )
