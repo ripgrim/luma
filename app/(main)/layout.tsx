@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: "Luma | Home",
+    title: "Luma",
     description: "Trading on Roblox, smarter."
 }
 
