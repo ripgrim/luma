@@ -24,7 +24,7 @@ export const userAssetSchema = z.object({
   recentAveragePrice: z.number().nullable().optional(),
   originalPrice: z.number().nullable().optional(),
   assetStock: z.number().nullable().optional(),
-  membershipType: z.number().nullable().optional()
+  membershipType: z.number().or(z.string()).nullable().optional()
 });
 
 // Zod schema for a trade offer (one side of the trade)
@@ -57,7 +57,7 @@ export const detailedTradeSchema = z.object({
   id: z.number().or(z.string()),
   user: userSchema,
   created: z.string(),
-  expiration: z.string(),
+  expiration: z.string().optional(),
   isActive: z.boolean(),
   status: z.number().or(z.string())
 });

@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
                 hostname: 'www.roblox.com',
                 protocol: 'https',
             },
+            {
+                hostname: 'thumbnails.roblox.com',
+                protocol: 'https',
+            },
         ],
     },
 }

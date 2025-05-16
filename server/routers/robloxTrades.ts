@@ -3,7 +3,7 @@ import { router, protectedProcedure, publicProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { db } from '@/database/db';
 import { users, trades, tradeItems } from '@/auth-schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, or, gt } from 'drizzle-orm';
 import {
   TradeStatusType,
   userSchema,
@@ -152,15 +152,65 @@ export const robloxTradesRouter = router({
         }
 
         const tradeData = await response.json();
-        const validatedData = detailedTradeSchema.parse(tradeData);
+        
+        // Log the raw response for debugging
+        console.log(`[getTradeDetails] Raw trade data for ID ${tradeId}:`, JSON.stringify(tradeData, null, 2));
+        
+        try {
+          const validatedData = detailedTradeSchema.parse(tradeData);
+          
+          // Log the offers and userAssets data for debugging
+          console.log(`[getTradeDetails] Trade ID: ${tradeId} - Response data:`);
+          if (tradeData.offers && Array.isArray(tradeData.offers)) {
+            tradeData.offers.forEach((offer: any, index: number) => {
+              console.log(`[getTradeDetails] Offer ${index} ${index === 0 ? '(Your offer)' : '(Partner offer)'}`);
+              if (offer.userAssets && Array.isArray(offer.userAssets)) {
+                console.log(`[getTradeDetails] User assets in offer ${index}:`, JSON.stringify(offer.userAssets, null, 2));
+              } else {
+                console.log(`[getTradeDetails] No userAssets in offer ${index} or not an array`);
+              }
+              if (offer.robux) {
+                console.log(`[getTradeDetails] Robux in offer ${index}:`, offer.robux);
+              }
+            });
+          } else {
+            console.log('[getTradeDetails] No offers found in trade data or not an array');
+          }
 
-        // Store the detailed trade data
-        await storeDetailedTrade(userId, validatedData);
+          // Store the detailed trade data
+          await storeDetailedTrade(userId, validatedData);
 
-        return {
-          success: true,
-          trade: validatedData
-        };
+          return {
+            success: true,
+            trade: validatedData
+          };
+        } catch (parseError: any) {
+          console.error(`[getTradeDetails] Schema validation error for trade ${tradeId}:`, parseError);
+          
+          // Try to salvage what we can from the data
+          const partiallyValidatedData = {
+            ...tradeData,
+            offers: tradeData.offers?.map((offer: any) => ({
+              ...offer,
+              userAssets: offer.userAssets?.map((asset: any) => ({
+                ...asset,
+                // Convert membershipType to number if it's a string
+                membershipType: typeof asset.membershipType === 'string' 
+                  ? parseInt(asset.membershipType, 10) || 0 
+                  : asset.membershipType
+              }))
+            })),
+            // Default expiration if missing
+            expiration: tradeData.expiration || new Date(Date.now() + 86400000).toISOString()
+          };
+          
+          console.log(`[getTradeDetails] Returning manually fixed data for trade ${tradeId}`);
+          
+          return {
+            success: true,
+            trade: partiallyValidatedData
+          };
+        }
       } catch (error: any) {
         console.error(`Error fetching trade details for ${tradeId}:`, error);
 
@@ -211,7 +261,9 @@ export const robloxTradesRouter = router({
           try {
             const decodedCursor = JSON.parse(atob(cursor));
             if (decodedCursor.lastId) {
-              conditions.push(eq(trades.originalId, decodedCursor.lastId));
+              console.log(`[robloxTrades.getStoredTrades] Using cursor with lastId: ${decodedCursor.lastId}`);
+              // Use gt operator for proper "greater than" comparison
+              conditions.push(gt(trades.originalId, String(decodedCursor.lastId)));
             }
           } catch (e) {
             console.error('Error parsing cursor:', e);
@@ -224,16 +276,26 @@ export const robloxTradesRouter = router({
           .select()
           .from(trades)
           .where(and(...conditions))
+          .orderBy(trades.originalId)  // Order by originalId to ensure consistent pagination
           .limit(limit + 1);
 
         console.log(`[robloxTrades.getStoredTrades] Found ${results.length} trades for user ${userId}, type: ${tradeType}`);
+        
+        // Log more details about the trades we found
+        if (results.length > 0) {
+          console.log(`[robloxTrades.getStoredTrades] First trade originalId: ${results[0].originalId}, Last trade originalId: ${results[results.length - 1].originalId}`);
+          console.log(`[robloxTrades.getStoredTrades] Trade IDs in this batch: ${results.map(t => t.originalId).join(', ')}`);
+        }
 
         // Check if there's a next page
         let nextCursor = null;
         if (results.length > limit) {
           const lastItem = results[limit - 1];
           nextCursor = btoa(JSON.stringify({ lastId: lastItem.originalId }));
+          console.log(`[robloxTrades.getStoredTrades] Generated next cursor for lastId: ${lastItem.originalId}`);
           results.pop(); // Remove the extra item
+        } else {
+          console.log(`[robloxTrades.getStoredTrades] No more trades available beyond this batch`);
         }
 
         return {

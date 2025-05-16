@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useRobloxAvatarsContext } from "@/providers/RobloxAvatarsProvider"
 
 interface TradeCardProps {
   id: string
@@ -28,6 +29,10 @@ export function TradeCard({
   const displayName = userDisplayName || userName
   const formattedDate = new Date(created).toLocaleDateString()
   
+  // Get avatar URL from the avatar provider
+  const { getAvatarUrl } = useRobloxAvatarsContext()
+  const avatarUrl = getAvatarUrl(userId)
+  
   // Get first letter of name for avatar fallback
   const firstLetter = displayName.charAt(0).toUpperCase()
   
@@ -41,11 +46,14 @@ export function TradeCard({
     >
       <CardContent className="flex items-center gap-4 p-4">
         <Avatar className="h-12 w-12">
-          <AvatarImage 
-            src={`https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=100&height=100&format=png`} 
-            alt={displayName} 
-          />
-          <AvatarFallback>{firstLetter}</AvatarFallback>
+          {avatarUrl ? (
+            <AvatarImage 
+              src={avatarUrl} 
+              alt={displayName} 
+            />
+          ) : (
+            <AvatarFallback>{firstLetter}</AvatarFallback>
+          )}
         </Avatar>
         <div className="flex-1 overflow-hidden">
           <p className="truncate font-medium">{displayName}</p>
