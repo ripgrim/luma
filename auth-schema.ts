@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { boolean, pgTable, text, timestamp, integer, primaryKey, uuid } from "drizzle-orm/pg-core"
 
 export const users = pgTable("users", {
     id: text("id").primaryKey(),
@@ -49,4 +49,38 @@ export const verifications = pgTable("verifications", {
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at"),
     updatedAt: timestamp("updated_at")
+})
+
+export const trades = pgTable("trades", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    tradePartnerId: text("trade_partner_id").notNull(),
+    tradePartnerName: text("trade_partner_name").notNull(),
+    tradePartnerDisplayName: text("trade_partner_display_name"),
+    created: timestamp("created").notNull(),
+    expiration: timestamp("expiration").notNull(),
+    isActive: boolean("is_active").notNull(),
+    status: text("status").notNull(),
+    tradeType: text("trade_type").notNull(), // inbound, outbound, completed, inactive
+    rawData: text("raw_data"), // Store the full JSON for future reference
+    originalId: text("original_id").notNull(), // Original Roblox trade ID
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+export const tradeItems = pgTable("trade_items", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tradeId: uuid("trade_id")
+        .notNull()
+        .references(() => trades.id, { onDelete: "cascade" }),
+    assetId: text("asset_id").notNull(),
+    assetName: text("asset_name").notNull(),
+    serialNumber: integer("serial_number"),
+    recentAveragePrice: integer("recent_average_price"),
+    offerType: text("offer_type").notNull(), // user_offer or partner_offer
+    robuxAmount: integer("robux_amount").default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
