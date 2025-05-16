@@ -43,24 +43,24 @@ export function useShortcuts(
     }
   }
 
-  console.log('[useShortcuts] Hook called. Registering shortcuts with react-hotkeys-hook options:', effectiveReactHotkeyOptions);
+  // console.log('[useShortcuts] Hook called. Registering shortcuts with react-hotkeys-hook options:', effectiveReactHotkeyOptions);
   if (hookOptions?.stopPropagation) {
-    console.log('[useShortcuts] Manual event.stopPropagation() will be called for these shortcuts.');
+    // console.log('[useShortcuts] Manual event.stopPropagation() will be called for these shortcuts.');
   }
 
   shortcuts.forEach((shortcut) => {
     const handler = handlers[shortcut.id];
     if (handler) {
       const hotkeyString = shortcut.keys.join('+').toLowerCase();
-      console.log(`[useShortcuts] Attempting to register: "${hotkeyString}" for shortcut ID: "${shortcut.id}" with scope: "${effectiveReactHotkeyOptions?.scopes}"`);
+      // console.log(`[useShortcuts] Attempting to register: "${hotkeyString}" for shortcut ID: "${shortcut.id}" with scope: "${effectiveReactHotkeyOptions?.scopes}"`);
 
       useHotkeys(
         hotkeyString,
         (event: KeyboardEvent) => { 
-          console.log(`[useShortcuts] Hotkey fired: "${hotkeyString}" (ID: "${shortcut.id}")`);
-          console.log(`[useShortcuts] Event details - metaKey: ${event.metaKey}, ctrlKey: ${event.ctrlKey}, shiftKey: ${event.shiftKey}, altKey: ${event.altKey}, key: ${event.key}`);
+          // console.log(`[useShortcuts] Hotkey fired: "${hotkeyString}" (ID: "${shortcut.id}")`);
+          // console.log(`[useShortcuts] Event details - metaKey: ${event.metaKey}, ctrlKey: ${event.ctrlKey}, shiftKey: ${event.shiftKey}, altKey: ${event.altKey}, key: ${event.key}`);
           if (hookOptions?.stopPropagation) {
-            console.log('[useShortcuts] Calling event.stopPropagation()');
+            // console.log('[useShortcuts] Calling event.stopPropagation()');
             event.stopPropagation();
           }
           handler(event); 
