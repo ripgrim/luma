@@ -90,7 +90,7 @@ export default function DashboardPage() {
                                     </ClippedCard>
                                 </div>
                                 <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                                    <RecentTradesSection trades={trades} />
+                                    <RecentTradesSection />
                                     <HistorySection />
                                 </div>
                             </div>

@@ -1,15 +1,7 @@
 "use client";
 
 import {
-    ProvidersCard,  
-    ChangeEmailCard,
-    SettingsCards,
-    UpdateAvatarCard,
-    DeleteAccountCard,
-    SessionsCard,
-    ChangePasswordCard,
-    UpdateUsernameCard,
-    UserAvatar,
+    DeleteAccountCard
 } from "@daveyplate/better-auth-ui";
 import { useSession, useListAccounts } from "@/hooks/auth-hooks";
 import RobloxAuthCard from "@/app/components/RobloxAuthCard";
