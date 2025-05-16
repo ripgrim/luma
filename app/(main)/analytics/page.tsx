@@ -5,7 +5,10 @@ import HomeHeader from "@/components/home-header";
 import HistorySection from "@/components/history-section";
 import { RoblosecurityGuard } from "@/components/RoblosecurityGuard";
 import { HomeIcon } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-metadata";
+
 export default function SettingsPage() {
+    usePageTitle("Analytics");
     const { user } = useSession()
     const { data: accounts, isPending: accountsLoading } = useListAccounts();
     const userData = {
