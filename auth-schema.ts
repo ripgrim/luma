@@ -6,6 +6,7 @@ export const users = pgTable("users", {
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
+    roblosecurity_cookie: text("roblosecurity_cookie"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 })

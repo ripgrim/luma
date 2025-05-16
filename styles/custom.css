@@ -13,6 +13,13 @@
     cursor: pointer;
 }
 
+/* Remove unwanted Roblox text/badge from the card */
+/* .roblox-auth-card::before,
+.roblox-auth-card [data-part="header"]::before {
+    content: none !important;
+    display: none !important;
+} */
+
 :root {
     --warning: hsl(38 92% 50%);
     --warning-foreground: hsl(48 96% 89%);

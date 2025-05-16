@@ -11,6 +11,7 @@ import { Toaster, toast } from "sonner"
 
 import { authClient } from "@/lib/auth-client"
 import { TRPCProvider } from "@/providers/trpc-provider"
+import { RoblosecurityProvider } from "@/providers/RoblosecurityProvider"
 
 function makeQueryClient() {
     return new QueryClient({
@@ -57,7 +58,9 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthQueryProvider>
+            <RoblosecurityProvider>
             <TRPCProvider>
+                
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"
@@ -76,8 +79,8 @@ export function Providers({ children }: { children: ReactNode }) {
                         onSessionChange={() => {
                             router.refresh()
                         }}
-                        redirectTo="/test"
-                        providers={["roblox", "discord"]}
+                        redirectTo="/dashboard"
+                        providers={["roblox"]}
                         Link={Link}
                         viewPaths={{
                             signIn: "/signIn",
@@ -92,6 +95,7 @@ export function Providers({ children }: { children: ReactNode }) {
                         </AuthUIProviderTanstack>
                     </ThemeProvider>
                 </TRPCProvider>
+                </RoblosecurityProvider>
             </AuthQueryProvider>
         </QueryClientProvider>
     )

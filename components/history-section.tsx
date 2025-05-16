@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react"
 import { trpc } from "@/utils/trpc"
 import { useSession, useListAccounts } from "@/hooks/auth-hooks"
+// import { KeyIcon } from "lucide-react"
+import { CardMask } from "@/components/ui/card-mask"
+import { useRoblosecurity } from "@/providers/RoblosecurityProvider"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const chartConfig = {
   value: {
@@ -30,6 +34,9 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+// interface HistorySectionProps {
+//   locked: boolean;
+// }
 
 const loadingData = [
   { date: "2024-04-04", desktop: 242, mobile: 260 },
@@ -44,7 +51,8 @@ const loadingData = [
   { date: "2024-04-13", desktop: 342, mobile: 380 },
 ]
 
-export default function HistorySection() {
+export default function HistorySection(/*{ locked }: HistorySectionProps*/) {
+  const { isRobloCookieVerified, isLoadingCookieStatus } = useRoblosecurity();
   const [timeRange, setTimeRange] = useState("90d")
   const { user } = useSession()
   const { data: accounts, isPending: accountsLoading } = useListAccounts();
@@ -53,7 +61,7 @@ export default function HistorySection() {
   const robloxAccountIdStr = robloxAccount?.accountId;
   const robloxUserId = robloxAccountIdStr ? parseInt(robloxAccountIdStr, 10) : undefined;
 
-  const { data, isLoading: chartDataLoading } = trpc.chart.getChartData.useQuery(
+  const { data, isLoading: chartDataIsLoading } = trpc.chart.getChartData.useQuery(
     {
       userId: robloxUserId as number, // Asserting as number because enabled flag handles undefined
     },
@@ -62,8 +70,25 @@ export default function HistorySection() {
     }
   );
 
-  const isLoading = accountsLoading || chartDataLoading;
+  const componentContentIsLoading = accountsLoading || chartDataIsLoading;
 
+  if (isLoadingCookieStatus || !isRobloCookieVerified) {
+    return (
+      <Card className="w-full overflow-hidden flex flex-col justify-around bg-card border-border">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <div>
+            <Skeleton className="h-6 w-24 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-[120px]" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[200px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className="w-full overflow-hidden flex flex-col justify-around bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
@@ -87,7 +112,7 @@ export default function HistorySection() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {componentContentIsLoading ? (
           <ChartAreaInteractive data={loadingData} config={chartConfig} timeRange={timeRange} />
         ) : (
           <ChartAreaInteractive data={data} config={chartConfig} timeRange={timeRange} />

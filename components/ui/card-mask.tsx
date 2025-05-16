@@ -9,6 +9,7 @@ interface CardMaskProps extends React.HTMLAttributes<HTMLDivElement> {
   opacity?: number
   blur?: number
   children?: React.ReactNode
+  enabled?: boolean
 }
 
 export function CardMask({
@@ -18,6 +19,7 @@ export function CardMask({
   opacity = 0.9,
   blur = 0,
   children,
+  enabled = false,
   className,
   ...props
 }: CardMaskProps) {

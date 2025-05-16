@@ -11,6 +11,7 @@ import {
   GalleryVerticalEnd,
   Key,
   Keyboard,
+  Link,
   Map,
   PieChart,
   Search,
@@ -34,6 +35,9 @@ import { useSession } from "@/hooks/auth-hooks"
 import { UserSwitcher } from "@/components/user-switcher"
 import Logo from "@/components/logo"
 import { Logo2 } from "@/components/logo"
+
+
+import { ROOT_PAGE } from "@/lib/constants"
 // This is sample data.
 const data = {
   user: {
@@ -156,7 +160,6 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useSession()
-
   const userData = {
     name: user?.name || "",
     email: user?.email || "",
@@ -167,7 +170,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
-        <Logo2 />
+        <a href={ROOT_PAGE}>
+          <Logo2 />
+        </a>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

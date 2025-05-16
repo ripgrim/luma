@@ -1,24 +1,10 @@
 "use client";
 
-import {
-    ProvidersCard,
-    ChangeEmailCard,
-    SettingsCards,
-    UpdateAvatarCard,
-    DeleteAccountCard,
-    SessionsCard,
-    ChangePasswordCard,
-    UpdateUsernameCard,
-    UserAvatar,
-} from "@daveyplate/better-auth-ui";
 import { useSession, useListAccounts } from "@/hooks/auth-hooks";
-import HomeHeader from "@/components/home-header"
-import { ClippedCard } from "@/components/clipped-card"
-import RecentTradesSection from "@/components/recent-trades-section"
-import HistorySection from "@/components/history-section"
-import { RobuxIcon, TradeIcon, PlayerIcon, SearchIcon } from "@/components/icons/icons"
-import { CardMask } from "@/components/ui/card-mask";
-import { KeyIcon } from "lucide-react";
+import HomeHeader from "@/components/home-header";
+import HistorySection from "@/components/history-section";
+import { RoblosecurityGuard } from "@/components/RoblosecurityGuard";
+import { HomeIcon } from "lucide-react";
 export default function SettingsPage() {
     const { user } = useSession()
     const { data: accounts, isPending: accountsLoading } = useListAccounts();
@@ -43,25 +29,29 @@ export default function SettingsPage() {
     console.log(userData)
 
     return (
+
         <div className="flex flex-col gap-6">
-            <div className="flex min-h-full flex-col relative">
-                <main className="flex-1 p-6 pb-24 rounded-2xl shadow-inner bg-background">
-                    <HomeHeader userName="ripgrim" />
-                    <div className="rounded-xl bg-[#181818] p-4 pb-8 shadow-inner w-full">
-                        <div className="grid gap-4 grid-cols-1 md:grid-cols-1 xl:grid-cols-3">
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
-                            <HistorySection />
+            <RoblosecurityGuard>
+                <div className="flex min-h-full flex-col relative">
+                    <main className="flex-1 p-6 pb-24 rounded-2xl shadow-inner bg-background">
+                        <HomeHeader pageTitle="Analytics" previousPage={<HomeIcon className="w-4 h-4" />} />
+                        <div className="rounded-xl bg-[#181818] p-4 pb-8 shadow-inner w-full">
+                            <div className="grid gap-4 grid-cols-1 md:grid-cols-1 xl:grid-cols-3">
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                                <HistorySection />
+                            </div>
                         </div>
-                    </div>
-                </main>
-            </div>
+                    </main>
+                </div>
+            </RoblosecurityGuard>
         </div>
+
     )
 }
