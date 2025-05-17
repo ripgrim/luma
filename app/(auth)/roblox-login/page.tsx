@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/hooks/auth-hooks';
+import { trpc } from '@/utils/trpc';
 import Image from 'next/image';
+import { TRPCClientError } from '@trpc/client';
+import { type AppRouter } from '@/server/root';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RobloxAuthService } from '@/app/services/robloxAuth';
 
 // Countdown component that prevents hydration errors
 const Countdown = ({ expirationTime }: { expirationTime: string }) => {
@@ -80,143 +82,174 @@ const RobloxIcon = ({ className }: { className?: string }) => (
 export default function RobloxLoginPage() {
     const { data: session } = useSession();
     const router = useRouter();
+    const [sessionId, setSessionId] = useState<string | null>(null);
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [expirationTime, setExpirationTime] = useState<string | null>(null);
     const [loginStatus, setLoginStatus] = useState<string>('waiting');
     const [statusMessage, setStatusMessage] = useState<string>('');
     const [accountName, setAccountName] = useState<string | null>(null);
-    const authService = RobloxAuthService.getInstance();
+    // Add a ref to prevent multiple requests
     const isInitiatingRef = useRef(false);
 
-    // Initialize the quick login session
-    useEffect(() => {
-        const initSession = async () => {
-            if (session?.user?.id && loginStatus === 'waiting' && !isInitiatingRef.current) {
-                console.log('Initiating Roblox login session');
-                isInitiatingRef.current = true;
-
-                try {
-                    const response = await authService.createQuickLoginSession();
-                    setQrCode(response.directQrUrl);
-                    setExpirationTime(response.expirationTime);
-                    setLoginStatus('pending');
-                } catch (error) {
-                    setStatusMessage(`Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    setLoginStatus('error');
-                } finally {
-                    isInitiatingRef.current = false;
-                }
-            }
-        };
-
-        // Add a small delay before making the request to avoid rapid retries
-        const timeoutId = setTimeout(initSession, 500);
-        return () => clearTimeout(timeoutId);
-    }, [session?.user?.id, loginStatus]);
-
-    // Poll for status updates
-    useEffect(() => {
-        let intervalId: NodeJS.Timeout;
-
-        const checkStatus = async () => {
-            if (loginStatus !== 'pending') return;
-
-            try {
-                const status = await authService.checkQuickLoginStatus();
-                
-                if (status.success) {
-                    if (status.status === 'Validated') {
-                        setLoginStatus('validated');
-                        setAccountName(status.accountName || null);
-                        
-                        // Complete the login process
-                        try {
-                            await authService.completeQuickLogin();
-                            setLoginStatus('completed');
-                            setStatusMessage('Roblox account linked successfully!');
-                            
-                            // Redirect to settings page after a short delay
-                            setTimeout(() => {
-                                router.push('/user/settings?roblox=success');
-                            }, 2000);
-                        } catch (error) {
-                            console.error('Error completing login:', error);
-                            
-                            // Check if the cookie might have been stored despite the error
-                            if (error instanceof Error && (
-                                error.message.includes('already authenticated') ||
-                                error.message.includes('cookie stored') ||
-                                error.message.includes('session not found')
-                            )) {
-                                setLoginStatus('completed');
-                                setStatusMessage('Roblox account linked successfully!');
-                                setTimeout(() => {
-                                    router.push('/user/settings?roblox=success');
-                                }, 2000);
-                            } else {
-                                setStatusMessage(`Error completing login: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                                setLoginStatus('error');
-                            }
-                        }
-                    } else if (status.status === 'Completed') {
-                        // If we get a Completed status directly, handle it
-                        setLoginStatus('completed');
-                        setStatusMessage('Roblox account linked successfully!');
-                        setTimeout(() => {
-                            router.push('/user/settings?roblox=success');
-                        }, 2000);
-                    } else if (status.status === 'Cancelled' || status.status === 'Expired') {
-                        setLoginStatus('cancelled');
-                        setStatusMessage(`Session ${status.status.toLowerCase()}`);
-                    } else if (status.message) {
-                        setStatusMessage(status.message);
-                        // Clear the message after a bit
-                        setTimeout(() => {
-                            if (loginStatus === 'pending') {
-                                setStatusMessage('');
-                            }
-                        }, 3000);
-                    }
-                } else if (status.message) {
-                    setStatusMessage(status.message);
-                    // Clear the message after a bit
-                    setTimeout(() => {
-                        if (loginStatus === 'pending') {
-                            setStatusMessage('');
-                        }
-                    }, 3000);
-                }
-            } catch (error) {
-                console.error('Error checking status:', error);
-                if (error instanceof Error && error.message.includes('not found')) {
-                    setLoginStatus('expired');
-                    setStatusMessage('Session expired or not found');
-                } else {
-                    setLoginStatus('error');
-                    setStatusMessage(`Error checking status: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
-            }
-        };
-
-        if (loginStatus === 'pending') {
-            intervalId = setInterval(checkStatus, 3000);
+    const createSession = trpc.robloxAuth.createQuickLoginSession.useMutation({
+        onSuccess: (data) => {
+            setSessionId(data.sessionId);
+            setQrCode(data.directQrUrl);
+            setExpirationTime(data.expirationTime);
+            setLoginStatus('pending');
+            isInitiatingRef.current = false;
+        },
+        onError: (error) => {
+            setStatusMessage(`Error creating session: ${error.message}`);
+            setLoginStatus('error');
+            isInitiatingRef.current = false;
         }
+    });
 
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
+    // Call checkStatus only when we have a sessionId and are pending
+    const { data: statusData, error: statusError } = trpc.robloxAuth.checkQuickLoginStatus.useQuery(
+        { sessionId: sessionId || '' },
+        {
+            enabled: !!sessionId && loginStatus === 'pending',
+            refetchInterval: 3000,
+        }
+    );
+
+    // Process the status data in a useEffect
+    useEffect(() => {
+        if (statusData) {
+            console.log('Received status data:', statusData);
+            
+            // If already validated or completing, don't process further status updates
+            if (loginStatus === 'validated' || loginStatus === 'completing') {
+                return;
             }
-        };
-    }, [loginStatus, router]);
+            
+            // If we got an error message but the status check wasn't successful, show it
+            if (!statusData.success && statusData.message) {
+                // Don't set error status, just show the message temporarily
+                setStatusMessage(statusData.message);
+                console.log('Status check issue:', statusData.message);
+                // Clear the message after a bit
+                setTimeout(() => {
+                    if (loginStatus === 'pending') {
+                        setStatusMessage('');
+                    }
+                }, 3000);
+                return;
+            }
+            
+            // Process normal status updates
+            if (statusData.status === 'Validated') {
+                setLoginStatus('validated');
+                // Ensure we're getting the raw account name without asterisks
+                const rawAccountName = statusData.accountName || null;
+                console.log('Original account name:', rawAccountName);
+                setAccountName(rawAccountName);
+            } else if (statusData.status === 'Cancelled' || statusData.status === 'Expired') {
+                setLoginStatus('cancelled');
+                setStatusMessage(`Session ${statusData.status.toLowerCase()}`);
+            }
+        }
+    }, [statusData, loginStatus]);
+
+    // Handle status errors
+    useEffect(() => {
+        if (statusError) {
+            const clientError = statusError as TRPCClientError<AppRouter>;
+            if (clientError.data?.code === 'NOT_FOUND') {
+                setLoginStatus('expired');
+                setStatusMessage('Session expired or not found');
+            } else {
+                setLoginStatus('error');
+                setStatusMessage(`Error checking status: ${statusError.message}`);
+            }
+        }
+    }, [statusError]);
+
+    // Add a flag to prevent multiple completion attempts
+    const [isCompleting, setIsCompleting] = useState(false);
+
+    const completeLogin = trpc.robloxAuth.completeQuickLoginAndStoreCookie.useMutation({
+        onSuccess: (data) => {
+            setLoginStatus('completed');
+            setStatusMessage('Roblox login completed successfully!');
+            // Redirect to profile or dashboard after a short delay
+            setTimeout(() => {
+                router.push('/user/settings?roblox=success');
+            }, 2000);
+        },
+        onError: (error) => {
+            console.error('Error completing login:', error);
+
+            // Check if the cookie might have been stored despite the error
+            // In this case, we still want to redirect to success
+            if (error.message?.includes('already authenticated') ||
+                error.message?.includes('cookie stored') ||
+                error.message?.includes('session not found')) {
+
+                setLoginStatus('completed');
+                setStatusMessage('Roblox login completed successfully!');
+                setTimeout(() => {
+                    router.push('/user/settings?roblox=success');
+                }, 2000);
+            } else {
+                setLoginStatus('error');
+                setStatusMessage(`Error completing login: ${error.message}`);
+            }
+        }
+    });
+
+    const cancelSession = trpc.robloxAuth.cancelQuickLoginSession.useMutation({
+        onSuccess: () => {
+            setLoginStatus('cancelled');
+            setStatusMessage('Login cancelled');
+            setSessionId(null);
+        }
+    });
+
+    // Only initiate session creation once when component mounts
+    useEffect(() => {
+        if (session?.user?.id && loginStatus === 'waiting' && !isInitiatingRef.current && !sessionId) {
+            console.log('Initiating Roblox login session');
+            isInitiatingRef.current = true;
+
+            // Add a small delay before making the request to avoid rapid retries
+            setTimeout(() => {
+                createSession.mutate({ userId: session.user.id });
+            }, 500);
+        }
+    }, [session?.user?.id, loginStatus, sessionId, createSession]);
+
+    // Process completion when validated
+    useEffect(() => {
+        if (loginStatus === 'validated' && sessionId && session?.user?.id && !isCompleting) {
+            console.log('Session validated, completing login');
+            setIsCompleting(true);
+            setLoginStatus('completing');
+
+            // Add a small delay before completion to ensure validation is processed
+            setTimeout(() => {
+                completeLogin.mutate({
+                    sessionId,
+                    userId: session.user.id
+                });
+            }, 1000);
+        }
+    }, [loginStatus, sessionId, session?.user?.id, completeLogin, isCompleting]);
 
     const handleCancel = () => {
-        authService.cancelSession();
-        setLoginStatus('cancelled');
-        setStatusMessage('Login cancelled');
+        if (sessionId) {
+            cancelSession.mutate({ sessionId });
+        } else {
+            setLoginStatus('cancelled');
+            setStatusMessage('Login cancelled');
+        }
     };
 
     const handleRetry = () => {
         setLoginStatus('waiting');
+        setSessionId(null);
         setQrCode(null);
         setExpirationTime(null);
         setStatusMessage('');
@@ -259,6 +292,9 @@ export default function RobloxLoginPage() {
                 <CardHeader>
                     <div className="flex flex-col items-center gap-2">
                         <RobloxIcon />
+                        {/* <CardTitle className="text-xl">
+                            Link Your Roblox Account
+                        </CardTitle> */}
                     </div>
                     {statusMessage && (
                         <CardDescription className={`text-center ${loginStatus === 'error' ? 'text-destructive' : ''}`}>
@@ -277,13 +313,13 @@ export default function RobloxLoginPage() {
 
                     {loginStatus === 'pending' && qrCode && (
                         <div className="flex flex-col items-center">
-                            <p className="mb-4 text-center text-muted-foreground">Scan this QR code with the Roblox app</p>
+                            <p className="mb-4 text-center text-muted-foreground">Scan this QR code with the Luma companion app</p>
                             <div className="border border-border rounded-lg p-4 mb-4 bg-white">
                                 <Image src={qrCode} alt="Roblox login QR code" width={200} height={200} />
                             </div>
                             
                             <div className="bg-muted rounded-lg p-3 mb-4 text-center w-full">
-                                <p className="text-sm text-muted-foreground mb-1">Or enter this code in the Roblox app:</p>
+                                <p className="text-sm text-muted-foreground mb-1">Or enter this code in the Luma companion app:</p>
                                 <p className="font-mono text-lg font-bold tracking-wider">
                                     {qrCode.includes('code=') ? new URL(qrCode).searchParams.get('code') : 'Loading...'}
                                 </p>
