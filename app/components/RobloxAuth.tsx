@@ -1,118 +1,108 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/hooks/auth-hooks';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { RobloxAuthService } from '@/services/robloxAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RobloxAuthService } from '@/app/services/robloxAuth';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 // Countdown component that prevents hydration errors
 const Countdown = ({ expirationTime }: { expirationTime: string }) => {
-  const [timeLeft, setTimeLeft] = useState<string>('');
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
+    const [timeLeft, setTimeLeft] = useState<string>('');
+    const [secondsLeft, setSecondsLeft] = useState(0);
+    const [mounted, setMounted] = useState(false);
+    const [isExpired, setIsExpired] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+    useEffect(() => {
+        setMounted(true);
+        
+        const calculateTimeLeft = () => {
+            const now = new Date();
+            const expiration = new Date(expirationTime);
+            const difference = expiration.getTime() - now.getTime();
+            
+            if (difference <= 0) {
+                setSecondsLeft(0);
+                setIsExpired(true);
+                return 'Expired';
+            }
+            
+            const minutes = Math.floor(difference / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            setSecondsLeft(minutes * 60 + seconds);
+            
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        };
+        
+        setTimeLeft(calculateTimeLeft());
+        
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+        
+        return () => clearInterval(timer);
+    }, [expirationTime]);
     
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const expiration = new Date(expirationTime);
-      const difference = expiration.getTime() - now.getTime();
-      
-      if (difference <= 0) {
-        setSecondsLeft(0);
-        setIsExpired(true);
-        return 'Expired';
-      }
-      
-      const minutes = Math.floor(difference / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-      setSecondsLeft(minutes * 60 + seconds);
-      
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
+    if (!mounted) return null;
     
-    setTimeLeft(calculateTimeLeft());
+    // Calculate progress (from 0 to 100%)
+    const progress = Math.max(0, Math.min(100, secondsLeft / 300 * 100)); // Assuming 5 minutes is the default expiration time
     
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [expirationTime]);
-  
-  if (!mounted) return null;
-  
-  // Calculate progress (from 0 to 100%)
-  const progress = Math.max(0, Math.min(100, secondsLeft / 300 * 100)); // Assuming 5 minutes is the default expiration time
-  
-  return (
-    <div className="w-full mt-3 mb-0">
-      <div className="flex justify-between mb-1.5">
-        <span className="text-sm font-medium text-muted-foreground">
-          {isExpired ? 'Session expired' : 'Session expires in'}
-        </span>
-        <span className={`text-sm font-mono font-bold ${isExpired ? 'text-destructive' : 'text-primary'}`}>
-          {timeLeft}
-        </span>
-      </div>
-      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-        <div 
-          className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${isExpired ? 'bg-destructive' : 'bg-primary'}`}
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-    </div>
-  );
+    return (
+        <div className="w-full mt-3 mb-0">
+            <div className="flex justify-between mb-1.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                    {isExpired ? 'Session expired' : 'Session expires in'}
+                </span>
+                <span className={`text-sm font-mono font-bold ${isExpired ? 'text-destructive' : 'text-primary'}`}>
+                    {timeLeft}
+                </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                <div 
+                    className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${isExpired ? 'bg-destructive' : 'bg-primary'}`}
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+    );
 };
 
 // Create a Roblox Icon component
 const RobloxIcon = ({ className }: { className?: string }) => (
-    <svg width="100" height="auto" viewBox="0 0 800 148" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} >
+    <svg width="100" height="auto" viewBox="0 0 800 148" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M96.449 96.0107L119.477 138.156H76.7498L57.3066 102.139H38.8866V138.156H0V10.4827H71.1215C100.542 10.4827 119.221 26.8115 119.221 56.1765C119.221 75.0722 110.522 88.6083 96.449 96.0107ZM38.8866 43.6644V68.9438H66.5165C74.7032 68.9438 79.8198 64.0922 79.8198 56.1765C79.8198 48.2607 74.7032 43.6644 66.5165 43.6644H38.8866ZM243.044 147.594L126.64 116.186L157.852 0L216.053 15.7039L274.255 31.4077L243.044 147.594ZM221.042 62.0494L188.551 53.1123L179.853 85.5414L212.344 94.4813L221.042 62.0494ZM407.547 102.139C407.547 126.652 391.941 138.156 367.637 138.156H291.399V10.4827H365.079C389.383 10.4827 404.989 22.9947 404.989 44.9546C404.989 58.7434 399.872 67.9386 390.15 74.3223C401.151 79.1577 407.547 88.8636 407.547 102.139ZM329.262 41.1244V60.0201H354.576C361.484 60.0201 365.577 56.9559 365.577 50.3169C365.577 44.1886 361.484 41.1244 354.576 41.1244H329.262ZM329.262 107.515H357.66C364.311 107.515 368.162 103.94 368.162 97.8089C368.162 91.1725 364.325 88.1083 357.66 88.1083H329.262V107.515ZM426.735 10.4827H465.616V100.354H521.387V138.156H426.729L426.735 10.4827ZM664.406 74.3223C664.406 87.453 660.505 100.289 653.196 111.207C645.887 122.125 635.498 130.634 623.344 135.659C611.19 140.684 597.816 141.999 584.913 139.437C572.01 136.875 560.158 130.552 550.855 121.267C541.553 111.982 535.217 100.153 532.651 87.2744C530.084 74.3959 531.402 61.047 536.436 48.9158C541.471 36.7845 549.996 26.4158 560.935 19.1207C571.873 11.8256 584.734 7.9319 597.889 7.9319C606.628 7.91455 615.284 9.6195 623.362 12.9489C631.439 16.2784 638.778 21.1668 644.958 27.3337C651.138 33.5007 656.037 40.8248 659.374 48.8859C662.712 56.9471 664.422 65.5866 664.406 74.3088V74.3223ZM625.519 74.3223C625.519 58.488 612.983 45.976 597.889 45.976C582.795 45.976 570.257 58.488 570.257 74.3223C570.257 90.1565 582.795 102.666 597.889 102.666C612.983 102.666 625.519 90.1377 625.519 74.3088V74.3223ZM758.041 72.2768L800 138.156H753.681L730.667 100.607L706.874 138.156H659.801L703.548 73.8062L663.383 10.4827H709.688L730.922 44.9546L751.389 10.4827H797.439L758.041 72.2768Z" fill="white" />
     </svg>
 );
 
-export default function RobloxLoginPage() {
-    const { data: session } = useSession();
+export default function RobloxAuth() {
     const router = useRouter();
-    const [qrCode, setQrCode] = useState<string | null>(null);
-    const [expirationTime, setExpirationTime] = useState<string | null>(null);
     const [loginStatus, setLoginStatus] = useState<string>('waiting');
     const [statusMessage, setStatusMessage] = useState<string>('');
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [expirationTime, setExpirationTime] = useState<string | null>(null);
     const [accountName, setAccountName] = useState<string | null>(null);
     const authService = RobloxAuthService.getInstance();
-    const isInitiatingRef = useRef(false);
 
     // Initialize the quick login session
     useEffect(() => {
         const initSession = async () => {
-            if (session?.user?.id && loginStatus === 'waiting' && !isInitiatingRef.current) {
-                console.log('Initiating Roblox login session');
-                isInitiatingRef.current = true;
-
-                try {
-                    const response = await authService.createQuickLoginSession();
-                    setQrCode(response.directQrUrl);
-                    setExpirationTime(response.expirationTime);
-                    setLoginStatus('pending');
-                } catch (error) {
-                    setStatusMessage(`Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    setLoginStatus('error');
-                } finally {
-                    isInitiatingRef.current = false;
-                }
+            try {
+                const response = await authService.createQuickLoginSession();
+                setQrCode(response.directQrUrl);
+                setExpirationTime(response.expirationTime);
+                setLoginStatus('pending');
+            } catch (error) {
+                setStatusMessage(`Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                setLoginStatus('error');
             }
         };
 
-        // Add a small delay before making the request to avoid rapid retries
-        const timeoutId = setTimeout(initSession, 500);
-        return () => clearTimeout(timeoutId);
-    }, [session?.user?.id, loginStatus]);
+        if (loginStatus === 'waiting') {
+            initSession();
+        }
+    }, [loginStatus]);
 
     // Poll for status updates
     useEffect(() => {
@@ -140,61 +130,18 @@ export default function RobloxLoginPage() {
                                 router.push('/user/settings?roblox=success');
                             }, 2000);
                         } catch (error) {
-                            console.error('Error completing login:', error);
-                            
-                            // Check if the cookie might have been stored despite the error
-                            if (error instanceof Error && (
-                                error.message.includes('already authenticated') ||
-                                error.message.includes('cookie stored') ||
-                                error.message.includes('session not found')
-                            )) {
-                                setLoginStatus('completed');
-                                setStatusMessage('Roblox account linked successfully!');
-                                setTimeout(() => {
-                                    router.push('/user/settings?roblox=success');
-                                }, 2000);
-                            } else {
-                                setStatusMessage(`Error completing login: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                                setLoginStatus('error');
-                            }
+                            setStatusMessage(`Error completing login: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                            setLoginStatus('error');
                         }
-                    } else if (status.status === 'Completed') {
-                        // If we get a Completed status directly, handle it
-                        setLoginStatus('completed');
-                        setStatusMessage('Roblox account linked successfully!');
-                        setTimeout(() => {
-                            router.push('/user/settings?roblox=success');
-                        }, 2000);
                     } else if (status.status === 'Cancelled' || status.status === 'Expired') {
                         setLoginStatus('cancelled');
                         setStatusMessage(`Session ${status.status.toLowerCase()}`);
-                    } else if (status.message) {
-                        setStatusMessage(status.message);
-                        // Clear the message after a bit
-                        setTimeout(() => {
-                            if (loginStatus === 'pending') {
-                                setStatusMessage('');
-                            }
-                        }, 3000);
                     }
                 } else if (status.message) {
                     setStatusMessage(status.message);
-                    // Clear the message after a bit
-                    setTimeout(() => {
-                        if (loginStatus === 'pending') {
-                            setStatusMessage('');
-                        }
-                    }, 3000);
                 }
             } catch (error) {
                 console.error('Error checking status:', error);
-                if (error instanceof Error && error.message.includes('not found')) {
-                    setLoginStatus('expired');
-                    setStatusMessage('Session expired or not found');
-                } else {
-                    setLoginStatus('error');
-                    setStatusMessage(`Error checking status: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
             }
         };
 
@@ -220,38 +167,7 @@ export default function RobloxLoginPage() {
         setQrCode(null);
         setExpirationTime(null);
         setStatusMessage('');
-        isInitiatingRef.current = false;
     };
-
-    if (!session) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
-                <Card className="w-full max-w-md roblox-auth-card">
-                    <CardHeader>
-                        <div className="flex flex-col items-center gap-2 p-4">
-                            <RobloxIcon className="w-20 h-20" />
-                            <CardTitle className="text-xl">
-                                Roblox Login
-                            </CardTitle>
-                        </div>
-                        <CardDescription className="text-center">
-                            You must be logged in to link your Roblox account
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground mb-4 text-center">
-                            Please log in to your account first to connect with Roblox.
-                        </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={() => router.push('/auth/login')} className="w-full">
-                            Go to Login
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
@@ -300,7 +216,7 @@ export default function RobloxLoginPage() {
                     {loginStatus === 'validated' && (
                         <div className="flex flex-col items-center py-8 w-full">
                             <p className="mb-4 text-muted-foreground text-center w-full break-words px-2">
-                               Finishing up...
+                                Finishing up...
                             </p>
                             <div className="w-8 h-8 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                         </div>
