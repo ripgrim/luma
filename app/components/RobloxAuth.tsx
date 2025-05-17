@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRobloxAuth } from '@/app/services/RobloxAuthService';
+import { RobloxAuthService } from '@/services/robloxAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -83,13 +83,13 @@ export default function RobloxAuth() {
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [expirationTime, setExpirationTime] = useState<string | null>(null);
     const [accountName, setAccountName] = useState<string | null>(null);
-    const { createQuickLoginSession, checkQuickLoginStatus, completeQuickLogin } = useRobloxAuth();
+    const authService = RobloxAuthService.getInstance();
 
     // Initialize the quick login session
     useEffect(() => {
         const initSession = async () => {
             try {
-                const response = await createQuickLoginSession();
+                const response = await authService.createQuickLoginSession();
                 setQrCode(response.directQrUrl);
                 setExpirationTime(response.expirationTime);
                 setLoginStatus('pending');
@@ -102,7 +102,7 @@ export default function RobloxAuth() {
         if (loginStatus === 'waiting') {
             initSession();
         }
-    }, [loginStatus, createQuickLoginSession]);
+    }, [loginStatus]);
 
     // Poll for status updates
     useEffect(() => {
@@ -112,7 +112,7 @@ export default function RobloxAuth() {
             if (loginStatus !== 'pending') return;
 
             try {
-                const status = await checkQuickLoginStatus();
+                const status = await authService.checkQuickLoginStatus();
                 
                 if (status.success) {
                     if (status.status === 'Validated') {
@@ -121,7 +121,7 @@ export default function RobloxAuth() {
                         
                         // Complete the login process
                         try {
-                            await completeQuickLogin();
+                            await authService.completeQuickLogin();
                             setLoginStatus('completed');
                             setStatusMessage('Roblox account linked successfully!');
                             
@@ -154,10 +154,12 @@ export default function RobloxAuth() {
                 clearInterval(intervalId);
             }
         };
-    }, [loginStatus, router, checkQuickLoginStatus, completeQuickLogin]);
+    }, [loginStatus, router]);
 
     const handleCancel = () => {
-        // Implement cancel logic
+        authService.cancelSession();
+        setLoginStatus('cancelled');
+        setStatusMessage('Login cancelled');
     };
 
     const handleRetry = () => {
