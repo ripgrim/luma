@@ -82,12 +82,6 @@ export function Providers({ children }: { children: ReactNode }) {
                         redirectTo="/dashboard"
                         providers={["roblox"]}
                         Link={Link}
-                        viewPaths={{
-                            signIn: "/signIn",
-                            signUp: "/signUp",
-                            forgotPassword: "/forgotPassword",
-                            resetPassword: "/resetPassword",
-                        }}
                     >
                         {children}
 
