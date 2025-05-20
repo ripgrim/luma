@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
+import { useRouter, usePathname } from "next/navigation"
 
 import {
   Collapsible,
@@ -32,6 +33,8 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -56,7 +59,15 @@ export function NavMain({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
+                        <a
+                          href={subItem.url}
+                          onClick={e => {
+                            if (subItem.url.startsWith("/trades?type=") && pathname === "/trades") {
+                              e.preventDefault();
+                              router.push(subItem.url, { scroll: false });
+                            }
+                          }}
+                        >
                           <span>{subItem.title}</span>
                         </a>
                       </SidebarMenuSubButton>

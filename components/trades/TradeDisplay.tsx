@@ -1,14 +1,14 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { useRobloxAvatarsContext } from "@/providers/RobloxAvatarsProvider"
 import { useRobloxItemsContext } from "@/providers/RobloxItemsProvider"
 import { useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
+import { RobuxIcon2 } from "../icons/robux-icon"
+import { TradeItem } from "@/components/trades/TradeItem"
 
 interface TradeItem {
   id: string
@@ -68,14 +68,7 @@ export function TradeDisplay({
   }, [items, id])
   
   const displayName = tradePartnerDisplayName || tradePartnerName
-  const createdDate = new Date(created).toLocaleString()
-  const expirationDate = new Date(expiration).toLocaleString()
-  
-  // Debug - check items received
-  console.log(`[TradeDisplay] Received ${items.length} items for trade ${id}`);
-  if (items.length > 0) {
-    console.log('[TradeDisplay] First few items:', items.slice(0, 3));
-  }
+  const username = tradePartnerName
   
   // Get avatar URL from the avatar provider
   const { getAvatarUrl } = useRobloxAvatarsContext()
@@ -87,6 +80,30 @@ export function TradeDisplay({
   // Filter items into user's and partner's offers
   const userItems = items.filter(item => item.offerType === 'user_offer')
   const partnerItems = items.filter(item => item.offerType === 'partner_offer')
+  
+  // Calculate totals
+  const calculateTotals = (itemsList: TradeItem[]) => {
+    let totalRap = 0;
+    let totalRobux = 0;
+
+    itemsList.forEach(item => {
+      if (item.recentAveragePrice) {
+        totalRap += item.recentAveragePrice;
+      }
+      if (item.assetId === 'robux' && item.robuxAmount) {
+        totalRap += item.robuxAmount;
+        totalRobux += item.robuxAmount;
+      }
+    });
+
+    return { totalRap, totalRobux };
+  };
+
+  const userTotals = calculateTotals(userItems);
+  const partnerTotals = calculateTotals(partnerItems);
+
+  // Calculate difference (partner value minus user value)
+  const rapDifference = partnerTotals.totalRap - userTotals.totalRap;
   
   // Determine the appropriate verbiage based on trade type and status
   const { userItemsLabel, partnerItemsLabel } = useMemo(() => {
@@ -171,95 +188,108 @@ export function TradeDisplay({
       </p>
     );
   };
+
+  // Format number with commas
+  const formatNumber = (num: number) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
   
   return (
-    <Card className="w-full overflow-hidden">
-      <CardHeader className="bg-muted/50 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              {avatarUrl && (
-              <AvatarImage 
-                  src={avatarUrl} 
-                alt={displayName} 
-              />
-              )}
-              <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
+    <div className="bg-background rounded-lg p-6 pt-0">
+      <h1 className="text-2xl font-bold mb-6">Trade with {displayName} <span className="text-muted-foreground">(@{username})</span></h1>
+      
+      <div className="space-y-8">
+        {/* User's Items */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{userItemsLabel}</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl">
+            {userItems
+              .filter(item => item.assetId !== 'robux')
+              .map(item => (
+                <div key={item.id} className="w-full max-w-[200px]">
+                  <TradeItemCard item={item} />
+                </div>
+              ))}
+            {userItems.length === 0 && renderUserEmptyState()}
+          </div>
+
+          <div className="flex justify-between text-sm pt-2 max-w-4xl">
             <div>
-              <CardTitle className="text-lg">{displayName}</CardTitle>
-              <CardDescription>Trade #{originalId}</CardDescription>
+              <div className="text-muted-foreground">Total RAP</div>
+              {userTotals.totalRobux > 0 && (
+                <div className="text-muted-foreground">Total Robux</div>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center justify-end gap-1">
+                <span className="flex items-center gap-2 text-2xl font-bold"><RobuxIcon2 className="w-4 h-4 fill-white text-white" />{formatNumber(userTotals.totalRap)}</span>
+              </div>
+              {userTotals.totalRobux > 0 && (
+                <div className="flex items-center justify-end gap-1">
+                  <span className="flex items-center gap-2 text-xl font-bold"><RobuxIcon2 className="w-4 h-4 fill-white text-white" />{formatNumber(userTotals.totalRobux)}</span>
+                </div>
+              )}
             </div>
           </div>
-          <Badge 
-            variant={
-              status === "Completed" ? "default" :
-              status === "Open" || status === "Pending" ? "outline" :
-              "secondary"
-            }
-          >
-            {status}
-          </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          {/* User's Offer (Always on top) */}
-          <div className="space-y-3">
-            <h3 className="font-medium text-primary">{userItemsLabel}</h3>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {userItems.map(item => (
-                <TradeItemCard key={item.id} item={item} />
-              ))}
-              {userItems.length === 0 && renderUserEmptyState()}
-            </div>
-          </div>
-          
-          <Separator />
-          
-          {/* Partner's Offer */}
-          <div className="space-y-3">
-            <h3 className="font-medium text-primary">{partnerItemsLabel}</h3>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {partnerItems.map(item => (
-                <TradeItemCard key={item.id} item={item} />
-              ))}
-              {partnerItems.length === 0 && renderPartnerEmptyState()}
+
+        {/* Value Difference Indicator */}
+        <div className="max-w-full my-6">
+          <div className="flex justify-center py-2 w-full">
+            <div className="flex items-center gap-2 w-full">
+              <div className="w-full h-[1px] bg-border opacity-30"></div>
+              <div className="flex items-center gap-2 px-[5px]">
+                <span className="text-blue-400"><RobuxIcon2 className="w-4 h-4 fill-white text-white" /></span>
+                <span className={`text-lg font-bold ${rapDifference > 0 ? "text-green-500" : "text-red-500"}`}>
+                  {rapDifference > 0 ? "+" : ""}{formatNumber(rapDifference)}
+                </span>
+              </div>
+              <div className="w-full h-[1px] bg-border opacity-30"></div>
             </div>
           </div>
         </div>
         
-        <div className="mt-6 flex justify-between text-sm text-muted-foreground">
-          <span>Created: {createdDate}</span>
-          <span>Expires: {expirationDate}</span>
+        {/* Partner's Items */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl">
+            {partnerItems
+              .filter(item => item.assetId !== 'robux')
+              .map(item => (
+                <div key={item.id} className="w-full max-w-[200px]">
+                  <TradeItemCard item={item} />
+                </div>
+              ))}
+            {partnerItems.length === 0 && renderPartnerEmptyState()}
+          </div>
+
+          <div className="flex justify-between text-sm pt-2 max-w-4xl">
+            <div>
+              <div className="text-muted-foreground">Total RAP</div>
+              {partnerTotals.totalRobux > 0 && (
+                <div className="text-muted-foreground">Total Robux</div>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center justify-end gap-1">
+                <span className="flex items-center gap-2 text-2xl font-bold"><RobuxIcon2 className="w-4 h-4 fill-white text-white" />{formatNumber(partnerTotals.totalRap)}</span>
+              </div>
+              {partnerTotals.totalRobux > 0 && (
+                <div className="flex items-center justify-end gap-1">
+                  <span className="flex items-center gap-2 text-xl font-bold"><RobuxIcon2 className="w-4 h-4 fill-white text-white" />{formatNumber(partnerTotals.totalRobux)}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
 function TradeItemCard({ item }: { item: TradeItem }) {
   // Use our RobloxItemsContext to get the thumbnail
   const { getItemThumbnailUrl } = useRobloxItemsContext()
-  
-  // Special case for Robux
-  if (item.assetId === 'robux') {
-    return (
-      <Card className="overflow-hidden">
-        <div className="relative aspect-square">
-          <div className="flex h-full w-full items-center justify-center bg-green-100 dark:bg-green-900">
-            <span className="text-xl font-bold text-green-600 dark:text-green-300">R$</span>
-          </div>
-        </div>
-        <CardContent className="p-3">
-          <p className="truncate text-sm font-medium">Robux</p>
-          <p className="text-sm text-green-600 dark:text-green-400">
-            R${typeof item.robuxAmount === 'number' ? Math.floor(item.robuxAmount) : item.robuxAmount}
-          </p>
-        </CardContent>
-      </Card>
-    )
-  }
+
   
   // Get thumbnail from the context
   const thumbnailUrl = getItemThumbnailUrl(item.assetId)
@@ -268,25 +298,6 @@ function TradeItemCard({ item }: { item: TradeItem }) {
   const fallbackUrl = `https://www.roblox.com/asset-thumbnail/image?assetId=${item.assetId}&width=420&height=420&format=png`
   
   return (
-    <Card className="overflow-hidden">
-      <div className="relative aspect-square">
-        <img 
-          src={thumbnailUrl || fallbackUrl} 
-          alt={item.assetName}
-          className="h-full w-full object-cover"
-        />
-        {item.serialNumber && (
-          <Badge variant="secondary" className="absolute bottom-1 right-1 text-xs">
-            #{item.serialNumber}
-          </Badge>
-        )}
-      </div>
-      <CardContent className="p-3">
-        <p className="truncate text-sm font-medium">{item.assetName}</p>
-        {item.recentAveragePrice && (
-          <p className="text-xs text-muted-foreground">Value: R${item.recentAveragePrice}</p>
-        )}
-      </CardContent>
-    </Card>
+    <TradeItem item={item} fallbackUrl={fallbackUrl} thumbnailUrl={thumbnailUrl} />
   )
 } 

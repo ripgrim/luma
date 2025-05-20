@@ -1,6 +1,8 @@
 // header logo
 export const ROOT_PAGE = "/dashboard"
 
+export const GITHUB_REPO = "https://github.com/ripgrim/luma"
+export const DISCORD_INVITE = "https://discord.gg/lumatrading"
 // sidebar
 export const SIDEBAR_COOKIE_NAME = "sidebar_state"
 export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7

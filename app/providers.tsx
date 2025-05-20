@@ -8,6 +8,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { Toaster, toast } from "sonner"
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 import { authClient } from "@/lib/auth-client"
 import { TRPCProvider } from "@/providers/trpc-provider"
@@ -83,7 +84,9 @@ export function Providers({ children }: { children: ReactNode }) {
                         providers={["roblox"]}
                         Link={Link}
                     >
-                        {children}
+                        <NuqsAdapter>
+                            {children}
+                        </NuqsAdapter>
 
                         <Toaster />
                         </AuthUIProviderTanstack>

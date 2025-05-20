@@ -10,14 +10,13 @@ import {
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { ChartConfig } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// import { trpc } from "@/utils/trpc"
-import { useState } from "react"
-import { trpc } from "@/utils/trpc"
 import { useSession, useListAccounts } from "@/hooks/auth-hooks"
 // import { KeyIcon } from "lucide-react"
 import { CardMask } from "@/components/ui/card-mask"
 import { useRoblosecurity } from "@/providers/RoblosecurityProvider"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useMemo, useState } from "react"
+import { trpc } from "@/utils/trpc"
 
 const chartConfig = {
   value: {
@@ -53,24 +52,65 @@ const loadingData = [
 
 export default function HistorySection(/*{ locked }: HistorySectionProps*/) {
   const { isRobloCookieVerified, isLoadingCookieStatus } = useRoblosecurity();
-  const [timeRange, setTimeRange] = useState("90d")
+  const [timeRange, setTimeRange] = useState("90d");
+  const [componentContentIsLoading, setComponentContentIsLoading] = useState(true);
+  const [data, setData] = useState<any[]>([]);
+
+  // Memoize chart config to prevent unnecessary re-renders
+  const chartConfig = useMemo(() => ({
+    value: {
+      label: "Value",
+      theme: {
+        light: "#1976d2",
+        dark: "#1976d2"
+      }
+    },
+    rap: {
+      label: "RAP",
+      theme: {
+        light: "#00e676",
+        dark: "#00e676"
+      }
+    },
+    num_limiteds: {
+      label: "Limiteds",
+      theme: {
+        light: "#ff9800",
+        dark: "#ff9800"
+      }
+    }
+  }), []);
+
+  // Memoize loading data to prevent unnecessary re-renders
+  const loadingData = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 90 }, (_, i) => {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      return {
+        date: date.toISOString(),
+        value: 0,
+        rap: 0,
+        num_limiteds: 0
+      };
+    }).reverse();
+  }, []);
+
   const { user } = useSession()
   const { data: accounts, isPending: accountsLoading } = useListAccounts();
-
-  const robloxAccount = accounts?.find(account => account.provider === "roblox");
-  const robloxAccountIdStr = robloxAccount?.accountId;
+  const robloxAccountIdStr = accounts?.find(account => account.provider === "roblox")?.accountId;
   const robloxUserId = robloxAccountIdStr ? parseInt(robloxAccountIdStr, 10) : undefined;
 
-  const { data, isLoading: chartDataIsLoading } = trpc.chart.getChartData.useQuery(
+  const { data: chartData, isLoading: chartDataIsLoading } = trpc.chart.getChartData.useQuery(
     {
       userId: robloxUserId as number, // Asserting as number because enabled flag handles undefined
     },
     {
-      enabled: !!robloxUserId && !isNaN(robloxUserId) && robloxUserId > 0,
+      enabled: !!robloxUserId
     }
   );
 
-  const componentContentIsLoading = accountsLoading || chartDataIsLoading;
+
 
   if (isLoadingCookieStatus || !isRobloCookieVerified) {
     return (
@@ -115,7 +155,7 @@ export default function HistorySection(/*{ locked }: HistorySectionProps*/) {
         {componentContentIsLoading ? (
           <ChartAreaInteractive data={loadingData} config={chartConfig} timeRange={timeRange} />
         ) : (
-          <ChartAreaInteractive data={data} config={chartConfig} timeRange={timeRange} />
+          <ChartAreaInteractive data={chartData} config={chartConfig} timeRange={timeRange} />
         )}
       </CardContent>
     </Card>
