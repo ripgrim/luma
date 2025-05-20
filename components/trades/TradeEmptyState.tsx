@@ -11,7 +11,9 @@ import {
   ArrowDown,
   ArrowUp, 
   Inbox,
-  SendHorizonal
+  SendHorizonal,
+  PersonStanding,
+  CircleUser
 } from "lucide-react";
 
 interface TradeEmptyStateProps {
@@ -55,12 +57,6 @@ export function TradeEmptyState({ tradeType }: TradeEmptyStateProps) {
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 py-12 border-2 border-dashed rounded-lg bg-muted/30">
-      {/* Decorative shapes in the background */}
-      <div className="absolute opacity-5 pointer-events-none">
-        <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full bg-primary"></div>
-        <div className="absolute -bottom-10 -right-10 w-24 h-24 rounded-full bg-primary"></div>
-        <div className="absolute top-10 right-10 w-16 h-16 rounded-full bg-secondary"></div>
-      </div>
       
       {/* Main icon */}
       <div className="relative mb-8 bg-background rounded-full p-5 shadow-md">
@@ -80,7 +76,7 @@ export function TradeEmptyState({ tradeType }: TradeEmptyStateProps) {
       {/* Visual trade representation */}
       <div className="mt-8 flex items-center justify-center gap-10 opacity-30">
         <div className="relative border border-border rounded-md p-3 bg-muted/20">
-          <ShoppingBag className="h-8 w-8 stroke-muted-foreground" />
+          <CircleUser className="h-8 w-8 stroke-muted-foreground" />
         </div>
         
         {tradeType === "inbound" && (
@@ -100,7 +96,7 @@ export function TradeEmptyState({ tradeType }: TradeEmptyStateProps) {
         )}
         
         <div className="relative border border-border rounded-md p-3 bg-muted/20">
-          <PackageOpen className="h-8 w-8 stroke-muted-foreground" />
+          <CircleUser className="h-8 w-8 stroke-muted-foreground" />
         </div>
       </div>
     </div>

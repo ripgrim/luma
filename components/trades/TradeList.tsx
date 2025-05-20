@@ -40,7 +40,7 @@ export function TradeList({ trades, items, isLoading = false }: TradeListProps) 
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(
     trades.length > 0 ? trades[0].id : null
   )
-  
+
   // Handle trade selection and toggle
   const handleTradeClick = (tradeId: string) => {
     if (selectedTradeId === tradeId) {
@@ -49,14 +49,14 @@ export function TradeList({ trades, items, isLoading = false }: TradeListProps) 
       setSelectedTradeId(tradeId) // Select new trade
     }
   }
-  
+
   // Find selected trade and its items
-  const selectedTrade = selectedTradeId 
-    ? trades.find(trade => trade.id === selectedTradeId) 
+  const selectedTrade = selectedTradeId
+    ? trades.find(trade => trade.id === selectedTradeId)
     : null
-    
+
   const selectedTradeItems = selectedTradeId ? items[selectedTradeId] || [] : []
-  
+
   if (isLoading) {
     return (
       <div className="flex min-h-[300px] w-full items-center justify-center">
@@ -64,7 +64,7 @@ export function TradeList({ trades, items, isLoading = false }: TradeListProps) 
       </div>
     )
   }
-  
+
   if (trades.length === 0) {
     return (
       <div className="flex min-h-[300px] w-full items-center justify-center">
@@ -72,49 +72,51 @@ export function TradeList({ trades, items, isLoading = false }: TradeListProps) 
       </div>
     )
   }
-  
+
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <div className="md:col-span-1">
-        <h2 className="mb-4 text-lg font-medium">Trades</h2>
-        <div className="h-[600px] overflow-auto pr-4">
-          <div className="space-y-3">
-            {trades.map(trade => (
-              <TradeCard
-                key={trade.id}
-                id={trade.id}
-                userId={trade.tradePartnerId}
-                userName={trade.tradePartnerName}
-                userDisplayName={trade.tradePartnerDisplayName}
-                created={trade.created}
-                isActive={trade.isActive}
-                isSelected={selectedTradeId === trade.id}
-                onClick={() => handleTradeClick(trade.id)}
-              />
-            ))}
+    <div className="mx-auto max-w-7xl px-4">
+      <div className="flex gap-6 flex-col md:flex-row">
+        <div className="w-full md:w-[420px] flex-shrink-0">
+          <div className="h-[600px] overflow-auto pr-0 md:pr-4">
+            <div className="space-y-4">
+              {trades.map(trade => (
+                <div key={trade.id} className="max-w-full">
+                  <TradeCard
+                    id={trade.id}
+                    userId={trade.tradePartnerId}
+                    userName={trade.tradePartnerName}
+                    userDisplayName={trade.tradePartnerDisplayName}
+                    created={trade.created}
+                    isActive={trade.isActive}
+                    isSelected={selectedTradeId === trade.id}
+                    onClick={() => handleTradeClick(trade.id)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="md:col-span-2">
-        {selectedTrade ? (
-          <TradeDisplay
-            id={selectedTrade.id}
-            originalId={selectedTrade.originalId}
-            tradePartnerId={selectedTrade.tradePartnerId}
-            tradePartnerName={selectedTrade.tradePartnerName}
-            tradePartnerDisplayName={selectedTrade.tradePartnerDisplayName}
-            created={selectedTrade.created}
-            expiration={selectedTrade.expiration}
-            status={selectedTrade.status}
-            tradeType={selectedTrade.tradeType}
-            items={selectedTradeItems}
-          />
-        ) : (
-          <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed">
-            <p className="text-muted-foreground">Select a trade to view details</p>
-          </div>
-        )}
+
+        <div className="flex-1 min-w-0">
+          {selectedTrade ? (
+            <TradeDisplay
+              id={selectedTrade.id}
+              originalId={selectedTrade.originalId}
+              tradePartnerId={selectedTrade.tradePartnerId}
+              tradePartnerName={selectedTrade.tradePartnerName}
+              tradePartnerDisplayName={selectedTrade.tradePartnerDisplayName}
+              created={selectedTrade.created}
+              expiration={selectedTrade.expiration}
+              status={selectedTrade.status}
+              tradeType={selectedTrade.tradeType}
+              items={selectedTradeItems}
+            />
+          ) : (
+            <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed bg-background">
+              <p className="text-muted-foreground">Select a trade to view details</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

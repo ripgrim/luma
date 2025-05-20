@@ -1,15 +1,19 @@
 "use client"
 
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "../ui/sidebar"
 import { useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
+import { useQueryState } from "nuqs"
+import { Button } from "../ui/button"
 
 const tradeTypes = [
-  { label: "Inbound", href: "/trades/inbound", type: "inbound" },
-  { label: "Outbound", href: "/trades/outbound", type: "outbound" },
-  { label: "Completed", href: "/trades/completed", type: "completed" },
-  { label: "Inactive", href: "/trades/inactive", type: "inactive" },
+  { label: "Inbound", type: "inbound" },
+  { label: "Outbound", type: "outbound" },
+  { label: "Completed", type: "completed" },
+  { label: "Inactive", type: "inactive" },
 ]
 
 interface TradeSwitcherProps {
@@ -17,49 +21,35 @@ interface TradeSwitcherProps {
 }
 
 export function TradeSwitcher({ onTypeChange }: TradeSwitcherProps = {}) {
-  const pathname = usePathname()
-  const router = useRouter()
-  
-  // Client-side navigation handler
-  const handleTypeChange = useCallback((href: string, type: string) => {
-    // Avoid navigation if already on the page
-    if (pathname === href) return;
-    
-    // If parent provided a callback, call it first
-    if (onTypeChange) {
-      onTypeChange(type);
-    }
-    
-    // Use shallow routing to avoid full page refresh
-    router.push(href, { scroll: false });
-  }, [pathname, router, onTypeChange]);
-  
+  const [currentType, setCurrentType]  = useQueryState("type", { defaultValue: "inbound" })
   return (
     <nav className="items-center relative mb-8 flex justify-center">
       <SidebarTrigger />
       <div className="relative flex gap-2 rounded-lg bg-muted p-1">
         {tradeTypes.map((type) => {
-          const isActive = pathname === type.href
+          const isActive = currentType === type.type
           return (
-            <button
-              key={type.href}
-              onClick={() => handleTypeChange(type.href, type.type)}
+            <Button
+              key={type.type}
+              onClick={() => setCurrentType(type.type)}
               className={cn(
                 "relative z-10 px-4 py-2 text-sm font-medium transition-colors duration-200",
-                isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-primary-foreground hover:text-primary-foreground" : "text-muted-foreground hover:text-muted-foreground"
               )}
+              variant="ghost"
             >
-              {isActive && (
-                <span 
-                  className="absolute inset-0 rounded-md bg-primary transition-all duration-300"
-                  style={{ 
-                    transform: "scale(1)",
-                    opacity: 1,
-                  }}
-                />
-              )}
+                <AnimatePresence>
+                {isActive && (
+                  <motion.span
+                    layoutId="trade-switcher-active"
+                    className="absolute inset-0 rounded-md bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                    style={{ zIndex: 0 }}
+                  />
+                )}
+              </AnimatePresence>
               <span className="relative z-10">{type.label}</span>
-            </button>
+            </Button>
           )
         })}
       </div>

@@ -17,3 +17,6 @@ export const auth = betterAuth({
         }, 
     },
 })
+
+//callbackUrl: "http://localhost:3000/api/auth/callback/roblox"
+//https://luma-restack.vercel.app/api/auth/callback/roblox

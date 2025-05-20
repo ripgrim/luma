@@ -35,7 +35,7 @@ import { useSession } from "@/hooks/auth-hooks"
 import { UserSwitcher } from "@/components/user-switcher"
 import Logo from "@/components/logo"
 import { Logo2 } from "@/components/logo"
-
+import Image from "next/image"
 
 import { ROOT_PAGE } from "@/lib/constants"
 // This is sample data.
@@ -61,19 +61,19 @@ const data = {
       items: [
         {
           title: "Inbound",
-          url: "/trades/inbound",
+          url: "/trades?type=inbound",
         },
         {
           title: "Outbound",
-          url: "/trades/outbound",
+          url: "/trades?type=outbound",
         },
         {
           title: "Inactive",
-          url: "/trades/inactive",
+          url: "/trades?type=inactive",
         },
         {
           title: "Completed",
-          url: "/trades/completed",
+          url: "/trades?type=completed",
         },
       ],
     },
@@ -117,7 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
         <a href={ROOT_PAGE}>
-          <Logo2 />
+          <Image src="/luma-icon.png" alt="Luma" width={30} height={30} />
         </a>
       </SidebarHeader>
       <SidebarContent>

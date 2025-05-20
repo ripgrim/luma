@@ -157,7 +157,7 @@ export const robloxTradesRouter = router({
         console.log(`[getTradeDetails] Raw trade data for ID ${tradeId}:`, JSON.stringify(tradeData, null, 2));
         
         try {
-          const validatedData = detailedTradeSchema.parse(tradeData);
+        const validatedData = detailedTradeSchema.parse(tradeData);
           
           // Log the offers and userAssets data for debugging
           console.log(`[getTradeDetails] Trade ID: ${tradeId} - Response data:`);
@@ -177,13 +177,13 @@ export const robloxTradesRouter = router({
             console.log('[getTradeDetails] No offers found in trade data or not an array');
           }
 
-          // Store the detailed trade data
-          await storeDetailedTrade(userId, validatedData);
+        // Store the detailed trade data
+        await storeDetailedTrade(userId, validatedData);
 
-          return {
-            success: true,
-            trade: validatedData
-          };
+        return {
+          success: true,
+          trade: validatedData
+        };
         } catch (parseError: any) {
           console.error(`[getTradeDetails] Schema validation error for trade ${tradeId}:`, parseError);
           

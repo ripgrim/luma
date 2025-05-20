@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google"
+import { ReactScan } from "@/components/react-scan"
 
 import "@/styles/globals.css"
 
@@ -16,6 +17,7 @@ const geistMono = Geist_Mono({
     variable: "--font-geist-mono",
     subsets: ["latin"]
 })
+
 
 export const metadata: Metadata = {
     title: "Luma",
@@ -39,6 +41,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <ReactScan />
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <Providers>
                     <div className="flex min-h-svh flex-col">

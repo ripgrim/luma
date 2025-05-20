@@ -313,13 +313,13 @@ export default function RobloxLoginPage() {
 
                     {loginStatus === 'pending' && qrCode && (
                         <div className="flex flex-col items-center">
-                            <p className="mb-4 text-center text-muted-foreground">Scan this QR code with the Roblox mobile app</p>
+                            <p className="mb-4 text-center text-muted-foreground">Scan this QR code with the Luma companion app</p>
                             <div className="border border-border rounded-lg p-4 mb-4 bg-white">
                                 <Image src={qrCode} alt="Roblox login QR code" width={200} height={200} />
                             </div>
                             
                             <div className="bg-muted rounded-lg p-3 mb-4 text-center w-full">
-                                <p className="text-sm text-muted-foreground mb-1">Or enter this code in the Roblox app:</p>
+                                <p className="text-sm text-muted-foreground mb-1">Or enter this code in the Luma companion app:</p>
                                 <p className="font-mono text-lg font-bold tracking-wider">
                                     {qrCode.includes('code=') ? new URL(qrCode).searchParams.get('code') : 'Loading...'}
                                 </p>

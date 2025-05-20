@@ -68,6 +68,7 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
   
   // State to track current trade type (can change without page refresh)
   const [tradeType, setTradeType] = useState<TradePageLayoutProps["tradeType"]>(initialTradeType)
+  const [pendingType, setPendingType] = useState<TradePageLayoutProps["tradeType"] | null>(null)
   
   // State for trades pagination
   const [trades, setTrades] = useState<Trade[]>([])
@@ -105,6 +106,7 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
   // Update tradeType when initialTradeType changes from props
   useEffect(() => {
     if (initialTradeType !== tradeType) {
+      setPendingType(initialTradeType)
       setTradeType(initialTradeType)
       setSelectedTrade(null) // Reset selected trade when type changes
       setTrades([]) // Clear trades when type changes
@@ -142,6 +144,13 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
       refetchOnReconnect: true,
     }
   );
+
+  // When new data is loaded for the pending type, clear pendingType
+  useEffect(() => {
+    if (pendingType && tradeType === pendingType && !isInitialLoading) {
+      setPendingType(null)
+    }
+  }, [pendingType, tradeType, isInitialLoading])
 
   // Process initial trades data when it arrives
   useEffect(() => {
@@ -430,16 +439,8 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
   }, [selectedTrade?.id, selectedTrade?.originalId, utils.robloxTrades.getTradeDetails]);
   
   // Main loading state - show skeleton
-  if (!isClient || (isInitialLoading && trades.length === 0)) {
-    return (
-      <div className="flex flex-col gap-6 min-h-full">
-        <div className="flex min-h-full flex-col relative">
-          <main className="flex-1 p-6 pb-24 rounded-2xl shadow-inner bg-background">
-            <TradePageSkeleton />
-          </main>
-        </div>
-      </div>
-    )
+  if (!isClient || pendingType || (isInitialLoading && trades.length === 0)) {
+    return null;
   }
   
   // Empty state - no trades found
@@ -561,12 +562,12 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
   return (
     <div className="flex flex-col gap-6 min-h-full">
       <div className="flex min-h-full flex-col relative">
-        <main className="flex-1 p-6 pb-24 rounded-2xl shadow-inner bg-background">
+        <main className="flex-1 p-6 rounded-2xl shadow-inner bg-background">
           <div className="flex justify-center mb-6">
             <TradeSwitcher onTypeChange={handleTradeTypeChange} />
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] max-w-7xl mx-auto">
             <div className="lg:col-span-1">
               <div className="mt-6 relative h-[calc(100vh-300px)]">
                 <div className="h-full overflow-auto pr-4 space-y-3 pb-12">
@@ -578,7 +579,7 @@ function TradePageContent({ initialTradeType }: { initialTradeType: TradePageLay
               </div>
             </div>
             
-            <div className="lg:col-span-2 mt-[64px] sticky top-[90px]">
+            <div className="lg:col-span-2 mt-6 sticky top-[90px]">
               {selectedTrade ? (
                 <>
                   {/* Debug logging happens outside JSX */}

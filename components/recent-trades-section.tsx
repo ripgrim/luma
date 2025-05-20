@@ -216,7 +216,7 @@ function RecentTradesContent() {
           
           return (
             <div key={trade.id} className="flex items-center justify-between h-10">
-              <div className="flex items-center">
+            <div className="flex items-center">
                 <div className="w-10 h-10 rounded-md mr-3 overflow-hidden relative">
                   {avatarUrl ? (
                     <Image 
@@ -238,7 +238,7 @@ function RecentTradesContent() {
                     </div>
                   )}
                 </div>
-                <div>
+              <div>
                   <p className="text-white text-sm">{trade.username}</p>
                   <p className="text-gray-400 text-xs">{trade.displayName || '--'}</p>
                 </div>
