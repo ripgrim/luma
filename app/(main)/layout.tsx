@@ -2,15 +2,13 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import "@/styles/globals.css"
-
-import { Header } from "@/components/header"
-import type { ReactNode } from "react"
 import { Providers } from "@/app/providers"
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { HotkeyProviderWrapper } from "@/lib/hotkeys/hotkey-provider-wrapper"
-import { RedirectToSignIn, SignedIn, SignedOut } from "@daveyplate/better-auth-ui"
 import { RedirectToRoot } from "@/components/better-auth-ui/redirect-to-root"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { HotkeyProviderWrapper } from "@/lib/hotkeys/hotkey-provider-wrapper"
+import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui"
+import type { ReactNode } from "react"
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -51,9 +49,7 @@ export default function RootLayout({
                             <AppSidebar />
                             <SidebarInset>
                                 <HotkeyProviderWrapper>
-                                    <SignedIn>
-                                        {children}
-                                    </SignedIn>
+                                    <SignedIn>{children}</SignedIn>
                                     <SignedOut>
                                         <RedirectToRoot />
                                     </SignedOut>

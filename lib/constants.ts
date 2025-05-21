@@ -12,5 +12,5 @@ export const SIDEBAR_WIDTH_ICON = "3rem"
 export const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 // Define resize constraints
-export const RESIZE_MIN_WIDTH_DESKTOP = "12rem"; // Example: 192px
-export const RESIZE_MAX_WIDTH_DESKTOP = "24rem"; // Example: 384px
+export const RESIZE_MIN_WIDTH_DESKTOP = "12rem" // Example: 192px
+export const RESIZE_MAX_WIDTH_DESKTOP = "24rem" // Example: 384px

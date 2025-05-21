@@ -1,7 +1,6 @@
 "use client"
-import { motion } from "framer-motion";
-import { Clock, Plus, Cube, ChevronDown, MediumStack, Search, Filter, PanelLeftOpen, Lightning, ExclamationTriangle, User, Bell, Tag, ChevronLeft, ChevronRight, Calendar, ImageFile, Figma, Docx, X, Check, GroupPeople } from "@/components/icons/icons";
-import Image from "next/image";
+import { motion } from "framer-motion"
+import Image from "next/image"
 
 export function CoolList() {
     return (
@@ -12,29 +11,29 @@ export function CoolList() {
                 transition={{ duration: 0.5 }}
                 className="relative hidden lg:block"
             >
-                <div className="mx-auto max-w-[920px] text-center text-4xl font-normal leading-[48px] text-white">
-                    <span className="text-[#B7B7B7]">Work smarter, not harder.</span>{' '}
-                    <span className="pr-8 text-white">Automate repetitive</span>{' '}
+                <div className="mx-auto max-w-[920px] text-center font-normal text-4xl text-white leading-[48px]">
+                    <span className="text-[#B7B7B7]">Work smarter, not harder.</span>{" "}
+                    <span className="pr-8 text-white">Automate repetitive</span>{" "}
                     <span className="text-[#B7B7B7]">email</span>
-                    <span className="text-[#B7B7B7]"> tasks with</span>{' '}
-                    <span className="pr-8 text-white">smart templates, </span>{' '}
+                    <span className="text-[#B7B7B7]"> tasks with</span>{" "}
+                    <span className="pr-8 text-white">smart templates, </span>{" "}
                     <span className="text-white">scheduled sends</span>
                     <span className="text-[#B7B7B7]">
                         , follow-up reminders, and batch processing capabilities that
-                    </span>{' '}
+                    </span>{" "}
                     <br />
                     <span className="text-white underline">save hours every week.</span>
                 </div>
                 <div className="flex items-center justify-center">
                     <Image
-                        className="relative bottom-12 right-[162px]"
+                        className="relative right-[162px] bottom-12"
                         src="https://0.email/verified-home.png"
                         alt="tasks"
                         width={50}
                         height={50}
                     />
                     <Image
-                        className="relative bottom-[150px] right-[-25px]"
+                        className="relative right-[-25px] bottom-[150px]"
                         src="https://0.email/snooze-home.png"
                         alt="tasks"
                         width={50}

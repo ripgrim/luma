@@ -11,11 +11,11 @@ export const auth = betterAuth({
         schema
     }),
     socialProviders: {
-        roblox: { 
-            clientId: process.env.ROBLOX_CLIENT_ID as string, 
-            clientSecret: process.env.ROBLOX_CLIENT_SECRET as string, 
-        }, 
-    },
+        roblox: {
+            clientId: process.env.ROBLOX_CLIENT_ID as string,
+            clientSecret: process.env.ROBLOX_CLIENT_SECRET as string
+        }
+    }
 })
 
 //callbackUrl: "http://localhost:3000/api/auth/callback/roblox"

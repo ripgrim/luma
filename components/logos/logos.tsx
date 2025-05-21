@@ -2,7 +2,10 @@ export const Roblox = ({ className }: { className?: string }) => (
     <svg role="img" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg" className={className}>
         <title>Roblox</title>
         <g clipPath="url(#clip0_10_85)">
-            <path d="M31.6984 0L0 118.302L118.302 150L150 31.6984L31.6984 0ZM87.1031 95.9652L54.0454 87.1031L62.9075 54.0454L95.9784 62.9075L87.1031 95.9652Z" fill="white" />
+            <path
+                d="M31.6984 0L0 118.302L118.302 150L150 31.6984L31.6984 0ZM87.1031 95.9652L54.0454 87.1031L62.9075 54.0454L95.9784 62.9075L87.1031 95.9652Z"
+                fill="white"
+            />
         </g>
         <defs>
             <clipPath id="clip0_10_85">
@@ -10,4 +13,4 @@ export const Roblox = ({ className }: { className?: string }) => (
             </clipPath>
         </defs>
     </svg>
-);
+)

@@ -1,40 +1,47 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line } from "recharts"
+import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import {
-    ChartConfig,
+    type ChartConfig,
     ChartContainer,
     ChartTooltip,
-    ChartTooltipContent,
+    ChartTooltipContent
 } from "@/components/ui/chart"
+import { useIsMobile } from "@/hooks/use-mobile"
 
-export function ChartAreaInteractive({ data, config, timeRange }: { data: any, config: ChartConfig, timeRange: string }) {
+export function ChartAreaInteractive({
+    data,
+    config,
+    timeRange
+}: { data: any; config: ChartConfig; timeRange: string }) {
     const isMobile = useIsMobile()
 
     // Memoize filtered data calculation
     const filteredData = React.useMemo(() => {
-        return data?.filter((item: any) => {
-            const date = new Date(item.date)
-            const referenceDate = data.length > 0 ? new Date(data[data.length - 1].date) : new Date()
-            let daysToSubtract = 90
-            if (timeRange === "30d") {
-                daysToSubtract = 30
-            } else if (timeRange === "7d") {
-                daysToSubtract = 7
-            }
-            const startDate = new Date(referenceDate)
-            startDate.setDate(startDate.getDate() - daysToSubtract)
-            return date >= startDate
-        }) || []
+        return (
+            data?.filter((item: any) => {
+                const date = new Date(item.date)
+                const referenceDate =
+                    data.length > 0 ? new Date(data[data.length - 1].date) : new Date()
+                let daysToSubtract = 90
+                if (timeRange === "30d") {
+                    daysToSubtract = 30
+                } else if (timeRange === "7d") {
+                    daysToSubtract = 7
+                }
+                const startDate = new Date(referenceDate)
+                startDate.setDate(startDate.getDate() - daysToSubtract)
+                return date >= startDate
+            }) || []
+        )
     }, [data, timeRange])
 
     // Memoize axis calculations
     const { yAxisDomain, valueAxisDomain } = React.useMemo(() => {
-        const minLimiteds = Math.min(...(filteredData.map((item: any) => item.num_limiteds || 0)))
-        const maxLimiteds = Math.max(...(filteredData.map((item: any) => item.num_limiteds || 0)))
+        const minLimiteds = Math.min(...filteredData.map((item: any) => item.num_limiteds || 0))
+        const maxLimiteds = Math.max(...filteredData.map((item: any) => item.num_limiteds || 0))
         const limitedsRange = maxLimiteds - minLimiteds
         const yAxisDomain = [
             Math.max(0, minLimiteds - limitedsRange * 0.1),
@@ -59,15 +66,12 @@ export function ChartAreaInteractive({ data, config, timeRange }: { data: any, c
         const date = new Date(value)
         return date.toLocaleDateString("en-US", {
             month: "short",
-            day: "numeric",
+            day: "numeric"
         })
     }, [])
 
     return (
-        <ChartContainer
-            config={config}
-            className="aspect-auto h-[250px] w-full"
-        >
+        <ChartContainer config={config} className="aspect-auto h-[250px] w-full">
             <AreaChart data={filteredData} height={250}>
                 <defs>
                     <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
@@ -88,26 +92,23 @@ export function ChartAreaInteractive({ data, config, timeRange }: { data: any, c
                     minTickGap={32}
                     tickFormatter={dateTickFormatter}
                 />
-                <YAxis 
+                <YAxis
                     yAxisId="left"
                     orientation="left"
                     domain={valueAxisDomain}
                     tickFormatter={valueTickFormatter}
                 />
-                <YAxis 
+                <YAxis
                     yAxisId="right"
                     orientation="right"
                     domain={yAxisDomain}
                     tickFormatter={(value) => Math.round(value).toString()}
-                    label={{ value: 'Limiteds', angle: 90, position: 'right' }}
+                    label={{ value: "Limiteds", angle: 90, position: "right" }}
                 />
                 <ChartTooltip
                     cursor={true}
                     content={
-                        <ChartTooltipContent
-                            labelFormatter={dateTickFormatter}
-                            indicator="dot"
-                        />
+                        <ChartTooltipContent labelFormatter={dateTickFormatter} indicator="dot" />
                     }
                 />
                 <Area

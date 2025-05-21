@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, integer, primaryKey, uuid } from "drizzle-orm/pg-core"
+import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
 export const users = pgTable("users", {
     id: text("id").primaryKey(),
@@ -8,7 +8,7 @@ export const users = pgTable("users", {
     image: text("image"),
     roblosecurity_cookie: text("roblosecurity_cookie"),
     createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull()
 })
 
 export const sessions = pgTable("sessions", {
@@ -67,7 +67,7 @@ export const trades = pgTable("trades", {
     rawData: text("raw_data"), // Store the full JSON for future reference
     originalId: text("original_id").notNull(), // Original Roblox trade ID
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
 export const tradeItems = pgTable("trade_items", {
@@ -82,15 +82,15 @@ export const tradeItems = pgTable("trade_items", {
     offerType: text("offer_type").notNull(), // user_offer or partner_offer
     robuxAmount: integer("robux_amount").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
-export const earlyAccess = pgTable('early_access', {
-    id: text('id').primaryKey(),
-    email: text('email').notNull().unique(),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
-    isEarlyAccess: boolean('is_early_access').notNull().default(false),
-    emailVerified: boolean('email_verified').notNull().default(false),
-    hasUsedTicket: text('has_used_ticket').default(''),
+export const earlyAccess = pgTable("early_access", {
+    id: text("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+    isEarlyAccess: boolean("is_early_access").notNull().default(false),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    hasUsedTicket: text("has_used_ticket").default("")
 })

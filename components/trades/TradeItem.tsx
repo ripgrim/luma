@@ -1,15 +1,16 @@
-import { Card } from "../ui/card";
+import { Card } from "../ui/card"
 
-
-export function TradeItem({ item, fallbackUrl, thumbnailUrl }: { item: any, fallbackUrl: string, thumbnailUrl: any }) {
-
-
+export function TradeItem({
+    item,
+    fallbackUrl,
+    thumbnailUrl
+}: { item: any; fallbackUrl: string; thumbnailUrl: any }) {
     return (
         <div>
-            <Card className="overflow-hidden border-border bg-card w-full p-0">
+            <Card className="w-full overflow-hidden border-border bg-card p-0">
                 <div className="relative aspect-square w-full">
                     {item.serialNumber && (
-                        <div className="absolute top-2 left-2 z-10 bg-background/20 border-border border-1 backdrop-blur-sm p-1 rounded text-xs font-medium">
+                        <div className="absolute top-2 left-2 z-10 rounded border-1 border-border bg-background/20 p-1 font-medium text-xs backdrop-blur-sm">
                             #{item.serialNumber}
                         </div>
                     )}
@@ -21,7 +22,7 @@ export function TradeItem({ item, fallbackUrl, thumbnailUrl }: { item: any, fall
                 </div>
             </Card>
             <div className="p-3">
-                <p className="text-sm font-medium">{item.assetName}</p>
+                <p className="font-medium text-sm">{item.assetName}</p>
             </div>
         </div>
     )

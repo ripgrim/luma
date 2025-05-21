@@ -1,22 +1,23 @@
-'use client'
+"use client"
 
-import React, {useState, ReactNode} from "react";
+import type React from "react"
+import { type ReactNode, useState } from "react"
 
 export interface SwipeableProps {
-    children:ReactNode,
-    onSwipeLeft?: () => void,
-    onSwipeRight?: () => void,
-    onSwipeUp?: () => void,
+    children: ReactNode
+    onSwipeLeft?: () => void
+    onSwipeRight?: () => void
+    onSwipeUp?: () => void
     onSwipeDown?: () => void
 }
 
 // https://stackoverflow.com/questions/70612769/how-do-i-recognize-swipe-events-in-react
-export default function Swipeable(props:SwipeableProps) {
-    const [touchStartX, setTouchStartX] = useState<number|null>(null)
-    const [touchEndX, setTouchEndX] = useState<number|null>(null)
-    const [touchStartY, setTouchStartY] = useState<number|null>(null)
-    const [touchEndY, setTouchEndY] = useState<number|null>(null)
-    const minSwipeDistance = 50 
+export default function Swipeable(props: SwipeableProps) {
+    const [touchStartX, setTouchStartX] = useState<number | null>(null)
+    const [touchEndX, setTouchEndX] = useState<number | null>(null)
+    const [touchStartY, setTouchStartY] = useState<number | null>(null)
+    const [touchEndY, setTouchEndY] = useState<number | null>(null)
+    const minSwipeDistance = 50
 
     function onTouchStart(e: React.TouchEvent<HTMLDivElement>) {
         setTouchEndX(null)
@@ -39,15 +40,15 @@ export default function Swipeable(props:SwipeableProps) {
         const xDistance = (touchStartX ?? 0) - (touchEndX ?? 0)
         const yDistance = (touchStartY ?? 0) - (touchEndY ?? 0)
         if (Math.abs(yDistance) >= Math.abs(xDistance)) {
-            return;
+            return
         }
         const isLeftSwipe = xDistance > minSwipeDistance
         const isRightSwipe = xDistance < -minSwipeDistance
         if (isLeftSwipe && props.onSwipeLeft) {
-            props.onSwipeLeft();
+            props.onSwipeLeft()
         }
         if (isRightSwipe && props.onSwipeRight) {
-            props.onSwipeRight();
+            props.onSwipeRight()
         }
     }
 
@@ -55,15 +56,15 @@ export default function Swipeable(props:SwipeableProps) {
         const xDistance = (touchStartX ?? 0) - (touchEndX ?? 0)
         const yDistance = (touchStartY ?? 0) - (touchEndY ?? 0)
         if (Math.abs(xDistance) >= Math.abs(yDistance)) {
-            return;
+            return
         }
         const isUpSwipe = yDistance > minSwipeDistance
         const isDownSwipe = yDistance < -minSwipeDistance
         if (isDownSwipe && props.onSwipeDown) {
-            props.onSwipeDown();
+            props.onSwipeDown()
         }
         if (isUpSwipe && props.onSwipeUp) {
-            props.onSwipeUp();
+            props.onSwipeUp()
         }
     }
 
