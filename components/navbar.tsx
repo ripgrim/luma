@@ -26,7 +26,8 @@ function Logo() {
     <a href="/" className="flex items-center gap-2 select-none">
       <span className="flex items-center justify-center">
         {/* Replace with your SVG or image if needed */}
-        <Image src="/logo.png" alt="Luma" width={206} height={68} />
+        {/* <Image src="/logo.png" alt="Luma" width={206} height={68} /> */}
+        <h1 className="text-white text-2xl font-bold">Luma</h1>
       </span>
     </a>
   )
@@ -34,7 +35,7 @@ function Logo() {
 
 function LogoMobile() {
   return (
-    <Image src="/logo.png" alt="Luma" width={206} height={68} className="w-20 h-auto"/>
+    <h1 className="text-white text-2xl font-bold">Luma</h1>
   )
 }
 
@@ -42,6 +43,21 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const githubData = trpc.github.getGithubData.useQuery()
   const router = useRouter()
+
+  // Function to render GitHub stars with proper loading state
+  const renderGitHubStars = () => {
+    if (githubData.isLoading) {
+      return "Loading...";
+    }
+    
+    if (githubData.isError) {
+      return "Error";
+    }
+    
+    return githubData.data?.stars === 0
+      ? '0 stars :('
+      : `${githubData.data?.stars} Stars`;
+  };
 
   return (
     <div className="fixed top-0 z-50 w-full max-w-[1200px] md:left-1/2 md:top-4 md:-translate-x-1/2 md:px-8">
@@ -116,17 +132,15 @@ export default function Navbar() {
                   <a href={GITHUB_REPO} target="_blank" rel="noreferrer" className="gap-2 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-white/10 px-4 py-2 h-10 text-sm mr-2 hover:border-white/20 text-white/90 hover:text-white transition-colors">
                     <GitHub className="w-[15px] h-[15px] text-white fill-white" />
                     <span className="hidden md:inline">
-                      {githubData.data?.stars === 0
-                        ? '0 stars :('
-                        : `${githubData.data?.stars} Stars`}
+                      {renderGitHubStars()}
                     </span>
                   </a>
-                  <SignedIn>
+                  {/* <SignedIn>
                     <Button className="font-v2 subpixel-antialiased inline-flex items-center justify-center whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white shadow-sm hover:border-white/20 transition-colors hover:text-black" onClick={() => router.push("/dashboard")}>Start Trading</Button>
                   </SignedIn>
                   <SignedOut>
                     <Button className="font-v2 subpixel-antialiased inline-flex items-center justify-center whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white shadow-sm hover:border-white/20 transition-colors" onClick={() => router.push("/login")}>Sign In</Button>
-                  </SignedOut>
+                  </SignedOut> */}
                 </div>
               </div>
             </div>
