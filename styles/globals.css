@@ -45,6 +45,67 @@
     --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Animation classes */
+.animate-star-movement-top {
+  animation: star-movement-top 6s linear infinite alternate;
+}
+
+.animate-star-movement-bottom {
+  animation: star-movement-bottom 6s linear infinite alternate;
+}
+
+/* Animation keyframes */
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+.animate-border-pulse {
+    position: relative;
+    background: #2A1D48;
+    box-shadow: 0 0 0 2px #8B5CF6;
+    animation: buttonScale 3s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes borderPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
+@keyframes buttonScale {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
 :root {
     --radius: 0.625rem;
     --background: rgb(1 0 0);
@@ -126,4 +187,4 @@
 
 .italic {
     font-style: italic;
-  }
+}

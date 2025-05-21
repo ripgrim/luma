@@ -168,10 +168,6 @@ export default function Footer() {
               </div>
             </div>
           </div>
-          <div className="mt-4 border-t border-white/10 pt-4 text-center md:mt-8">
-            <p className="text-xs leading-5 text-white">
-            </p>
-          </div>
         </div>
       </footer>
     </div>
