@@ -168,6 +168,9 @@ importers:
       '@biomejs/biome':
         specifier: 1.9.4
         version: 1.9.4
+      '@prettier/sync':
+        specifier: ^0.5.5
+        version: 0.5.5(prettier@3.5.3)
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.1.4
@@ -192,6 +195,9 @@ importers:
       esbuild:
         specifier: ^0.25.2
         version: 0.25.2
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
       react-email:
         specifier: 4.0.15
         version: 4.0.15(@babel/core@7.26.9)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1076,6 +1082,11 @@ packages:
     resolution: {integrity: sha512-naxcJgUJ6BTOROJ7C3QML7KvwKwCXQJYTc5L/b0eEsdYgPB6SxwoQ1vDGcS0Q7GVjAenVq/tXrybVdFShHYZWg==}
     peerDependencies:
       preact: 10.x
+
+  '@prettier/sync@0.5.5':
+    resolution: {integrity: sha512-6BMtNr7aQhyNcGzmumkL0tgr1YQGfm9d7ZdmRpWqWuqpc9vZBind4xMe5NMiRECOhjuSiWHfBWLBnXkpeE90bw==}
+    peerDependencies:
+      prettier: '*'
 
   '@prisma/client@5.22.0':
     resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
@@ -3229,6 +3240,9 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  make-synchronized@0.4.2:
+    resolution: {integrity: sha512-EwEJSg8gSGLicKXp/VzNi1tvzhdmNBxOzslkkJSoNUCQFZKH/NIUIp7xlfN+noaHrz4BJDN73gne8IHnjl/F/A==}
+
   marked@7.0.4:
     resolution: {integrity: sha512-t8eP0dXRJMtMvBojtkcsA7n48BkauktUKzfkPSCq85ZMTJ0v76Rke4DYz01omYpPTUh4p/f7HePgRo3ebG8+QQ==}
     engines: {node: '>= 16'}
@@ -4999,6 +5013,11 @@ snapshots:
     dependencies:
       '@preact/signals-core': 1.8.0
       preact: 10.26.6
+
+  '@prettier/sync@0.5.5(prettier@3.5.3)':
+    dependencies:
+      make-synchronized: 0.4.2
+      prettier: 3.5.3
 
   '@prisma/client@5.22.0(prisma@5.22.0)':
     optionalDependencies:
@@ -6914,6 +6933,8 @@ snapshots:
   lucide-react@0.503.0(react@19.1.0):
     dependencies:
       react: 19.1.0
+
+  make-synchronized@0.4.2: {}
 
   marked@7.0.4: {}
 
