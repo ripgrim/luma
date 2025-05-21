@@ -60,7 +60,7 @@ export const trades = pgTable("trades", {
     tradePartnerName: text("trade_partner_name").notNull(),
     tradePartnerDisplayName: text("trade_partner_display_name"),
     created: timestamp("created").notNull(),
-    expiration: timestamp("expiration").notNull(),
+    expiration: timestamp("expiration"),
     isActive: boolean("is_active").notNull(),
     status: text("status").notNull(),
     tradeType: text("trade_type").notNull(), // inbound, outbound, completed, inactive
