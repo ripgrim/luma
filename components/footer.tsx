@@ -15,17 +15,7 @@ const footer = {
     { name: "Changelog", href: "/changelog" },
     { name: "Status Page", href: "https://rivet.betteruptime.com/" },
   ],
-  resources: [
-    { name: "Blog", href: "/blog" },
-    {
-      name: "Rivet vs Cloudflare Workers",
-      href: "/rivet-vs-cloudflare-workers",
-    },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Sales", href: "/sales" },
-    { name: "Open-Source Friends", href: "/oss-friends" },
-    { name: "Press Kit", href: "https://releases.rivet.gg/press-kit.zip" },
-  ],
+
   legal: [
     { name: "Terms", href: "/terms" },
     { name: "Privacy Policy", href: "/privacy" },
@@ -125,46 +115,48 @@ export default function Footer() {
                 </a>
               </div>
             </div>
-            <div className="mt-16 grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:col-span-9 xl:mt-0">
+            <div className="mt-16 grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-3 xl:col-span-9 xl:mt-0">
               <div>
-                <div className="text-sm font-semibold leading-6 text-white">Product</div>
-                <ul role="list" className="mt-3 space-y-2">
+                {footer.product && (
+                  <>
+                    <div className="text-sm font-semibold leading-6 text-white">Product</div>
+                    <ul role="list" className="mt-3 space-y-2">
                   {footer.product.map((link) => (
                     <li key={link.name}>
                       <a className="text-sm leading-4 text-gray-300 hover:text-white" href={link.href}>{link.name}</a>
                     </li>
                   ))}
-                </ul>
+                    </ul>
+                  </>
+                )}
               </div>
               <div>
-                <div className="text-sm font-semibold leading-6 text-white">Developers</div>
+                {footer.devs && (
+                  <>
+                    <div className="text-sm font-semibold leading-6 text-white">Developers</div>
                 <ul role="list" className="mt-3 space-y-2">
                   {footer.devs.map((link) => (
                     <li key={link.name}>
                       <a className="text-sm leading-4 text-gray-300 hover:text-white" href={link.href}>{link.name}</a>
                     </li>
                   ))}
-                </ul>
+                    </ul>
+                  </>
+                )}
               </div>
               <div>
-                <div className="text-sm font-semibold leading-6 text-white">Resources</div>
-                <ul role="list" className="mt-3 space-y-2">
-                  {footer.resources.map((link) => (
-                    <li key={link.name}>
-                      <a className="text-sm leading-4 text-gray-300 hover:text-white" href={link.href}>{link.name}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="text-sm font-semibold leading-6 text-white">Legal</div>
-                <ul role="list" className="mt-3 space-y-2">
+                {footer.legal && (
+                  <>
+                    <div className="text-sm font-semibold leading-6 text-white">Legal</div>
+                    <ul role="list" className="mt-3 space-y-2">
                   {footer.legal.map((link) => (
                     <li key={link.name}>
                       <a className="text-sm leading-4 text-gray-300 hover:text-white" href={link.href}>{link.name}</a>
                     </li>
                   ))}
-                </ul>
+                    </ul>
+                  </>
+                )}
               </div>
             </div>
           </div>

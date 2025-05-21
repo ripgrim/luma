@@ -301,10 +301,10 @@ export function HeroSection() {
     // Memoize header content to prevent re-renders
     const headerContent = useMemo(() => (
         <>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-700 text-white leading-[1.3] sm:leading-[1.1] tracking-normal">
+            <h1 className="text-5xl sm:text-5xl md:text-6xl font-700 text-white leading-[1.3] sm:leading-[1.1] tracking-normal">
                 The <span className="text-white/90 italic">only</span> <MemoizedRoblox className="inline-block h-12" /> trading platform you&apos;ll ever need
             </h1>
-            <p className="text-lg sm:text-xl leading-[1.2] tracking-tight font-500 text-white/40 max-w-lg mx-auto sm:mx-0">
+            <p className="text-lg sm:text-lg md:text-xl leading-[1.2] tracking-tight font-500 text-white/40 max-w-lg mx-auto sm:mx-0">
                 Easily trade, <span className="text-white/90">scale account value</span>, and <span className="text-white/90">maximize</span> your income
             </p>
         </>
@@ -312,8 +312,8 @@ export function HeroSection() {
 
     return (
         <div className="relative isolate overflow-hidden pb-8 sm:pb-10 pt-0 lg:pt-64 mt-32 mb-auto">
-            <div className="mx-auto max-w-[1200px] md:px-16">
-                <div className="border-input/50 mb-6 inline-flex items-center gap-4 rounded-full border border-[#2A2A2A] bg-[#1E1E1E] px-4 py-1 md:justify-center">
+            <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-16">
+                <div className="border-input/50 mb-6 flex items-center justify-center md:justify-start mx-auto md:mx-0 gap-4 rounded-full border border-[#2A2A2A] bg-[#1E1E1E] px-4 py-1 w-fit">
                     <span className="flex items-center gap-2 text-sm">
                         <Image
                             src="/gc-small.svg"

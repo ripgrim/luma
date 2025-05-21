@@ -49,11 +49,11 @@ export default function Navbar() {
     if (githubData.isLoading) {
       return "Loading...";
     }
-    
+
     if (githubData.isError) {
       return "Error";
     }
-    
+
     return githubData.data?.stars === 0
       ? '0 stars :('
       : `${githubData.data?.stars} Stars`;
@@ -63,13 +63,13 @@ export default function Navbar() {
     <div className="fixed top-0 z-50 w-full max-w-[1200px] md:left-1/2 md:top-4 md:-translate-x-1/2 md:px-8">
       <div className="relative before:pointer-events-none before:absolute before:inset-[-1px] before:z-20 before:hidden before:rounded-2xl before:border before:border-white/10 before:content-[''] md:before:block">
         <div className="absolute inset-0 -z-[1] hidden overflow-hidden rounded-2xl transition-all md:block backdrop-blur-lg"></div>
-        <header className="bg-background/60 border-b-border sticky top-0 z-10 flex flex-col items-center border-b py-2 backdrop-blur md:static md:bg-transparent md:rounded-2xl md:max-w-[1200px] md:border-transparent md:backdrop-none [&>div:first-child]:px-3 md:backdrop-blur-none">
+        <header className="sticky top-0 z-10 flex flex-col items-center py-2 backdrop-blur md:static md:bg-transparent md:rounded-2xl md:max-w-[1200px] md:border-transparent md:backdrop-none [&>div:first-child]:px-3 md:backdrop-blur-none">
           <div className="w-full px-8 flex min-h-10 flex-col justify-center gap-4">
             <div className="flex w-full items-center gap-4">
               {/* Mobile menu button */}
               <Drawer.Root direction="left" open={isMenuOpen} onOpenChange={setIsMenuOpen} modal>
                 <Drawer.Trigger asChild>
-                  <button className="group inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 md:hidden text-foreground" type="button" aria-haspopup="dialog" aria-expanded={isMenuOpen} aria-controls="mobile-menu">
+                  <button className="group inline-flex items-center justify-center rounded-md text-sm font-medium bg-transparent hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 md:hidden text-foreground" type="button" aria-haspopup="dialog" aria-expanded={isMenuOpen} aria-controls="mobile-menu">
                     <Menu className="size-5" />
                     <span className="sr-only">Toggle navigation menu</span>
                   </button>
@@ -129,7 +129,7 @@ export default function Navbar() {
                   <a className="p-2 mr-4 text-white/90 hover:text-white transition-colors" href={DISCORD_INVITE} title="Discord">
                     <Discord className="drop-shadow-md w-[15px] h-[15px] text-white fill-white" />
                   </a>
-                  <a href={GITHUB_REPO} target="_blank" rel="noreferrer" className="gap-2 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-white/10 px-4 py-2 h-10 text-sm mr-2 hover:border-white/20 text-white/90 hover:text-white transition-colors">
+                  <a href={GITHUB_REPO} target="_blank" rel="noreferrer" className="gap-2 inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 h-10 text-sm mr-2 hover:border-white/20 text-white/90 hover:text-white transition-colors">
                     <GitHub className="w-[15px] h-[15px] text-white fill-white" />
                     <span className="hidden md:inline">
                       {renderGitHubStars()}
