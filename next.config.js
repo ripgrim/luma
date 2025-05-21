@@ -22,6 +22,10 @@ const nextConfig = {
         hostname: 'tr.rbxcdn.com',
         protocol: 'https',
       },
+      {
+        hostname: '0.email',
+        protocol: 'https',
+      },
     ],
   },
   async rewrites() {
