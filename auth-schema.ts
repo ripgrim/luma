@@ -84,3 +84,12 @@ export const tradeItems = pgTable("trade_items", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
+
+export const earlyAccess = pgTable('early_access', {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+    isEarlyAccess: boolean('is_early_access').notNull().default(false),
+    hasUsedTicket: text('has_used_ticket').default(''),
+});
