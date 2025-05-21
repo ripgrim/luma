@@ -9,6 +9,8 @@ import { Providers } from "@/app/providers"
 import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { HotkeyProviderWrapper } from "@/lib/hotkeys/hotkey-provider-wrapper"
+import { RedirectToSignIn, SignedIn, SignedOut } from "@daveyplate/better-auth-ui"
+import { RedirectToRoot } from "@/components/better-auth-ui/redirect-to-root"
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -49,7 +51,12 @@ export default function RootLayout({
                             <AppSidebar />
                             <SidebarInset>
                                 <HotkeyProviderWrapper>
-                                    {children}
+                                    <SignedIn>
+                                        {children}
+                                    </SignedIn>
+                                    <SignedOut>
+                                        <RedirectToRoot />
+                                    </SignedOut>
                                 </HotkeyProviderWrapper>
                             </SidebarInset>
                         </SidebarProvider>
