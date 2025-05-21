@@ -8,6 +8,20 @@
       "when": 1747366280080,
       "tag": "0000_graceful_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747788618017,
+      "tag": "0001_tiny_captain_cross",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747799299993,
+      "tag": "0002_breezy_gabe_jones",
+      "breakpoints": true
     }
   ]
 }
