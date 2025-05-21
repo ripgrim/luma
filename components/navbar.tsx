@@ -79,7 +79,7 @@ export default function Navbar() {
                   <Drawer.Content className="fixed left-0 top-0 bottom-0 z-50 w-[85vw] max-w-xs bg-[#131110] flex flex-col h-full px-5 pt-6 pb-8 shadow-2xl border-r border-[#282522] animate-in slide-in-from-left duration-200">
                     <div className="flex items-center justify-between mb-8">
                       <LogoMobile />
-                      <button onClick={() => setIsMenuOpen(false)} className="rounded-full border border-orange-500 text-orange-500 hover:bg-orange-500/10 w-8 h-8 flex items-center justify-center">
+                      <button onClick={() => setIsMenuOpen(false)} className="rounded-full text-white hover:scale-110 transition-all duration-200 w-8 h-8 flex items-center justify-center">
                         <X className="w-5 h-5" />
                         <span className="sr-only">Close menu</span>
                       </button>
