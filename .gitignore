@@ -45,3 +45,6 @@ yarn-error.log*
 # workspace
 .turbo
 .vscode
+
+# email
+app/api/test-email/route.ts
