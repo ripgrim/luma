@@ -125,7 +125,7 @@ export default function Footer() {
                 </a>
               </div>
             </div>
-            <div className="mt-16 grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-4 xl:col-span-9 xl:mt-0">
+            <div className="mt-16 grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:col-span-9 xl:mt-0">
               <div>
                 <div className="text-sm font-semibold leading-6 text-white">Product</div>
                 <ul role="list" className="mt-3 space-y-2">
