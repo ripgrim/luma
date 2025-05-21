@@ -14,6 +14,7 @@ import { trpc } from "@/utils/trpc"
 import { Loader2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Drawer } from "vaul"
+import { TradePageSkeleton } from "@/components/skeletons/trade/TradePageSkeleton"
 
 interface Trade {
     id: string
@@ -32,14 +33,6 @@ interface Trade {
 
 interface TradePageLayoutProps {
     tradeType: "inbound" | "outbound" | "completed" | "inactive"
-}
-
-// Map trade types to their corresponding status type values
-const tradeStatusTypeMap = {
-    inbound: TradeStatusType.Inbound, // 1
-    outbound: TradeStatusType.Outbound, // 2
-    completed: 3, // 3 (assuming this is the value)
-    inactive: 4 // 4 (assuming this is the value)
 }
 
 // Number of trades to fetch per page
@@ -107,36 +100,31 @@ function TradePageContent({
     // Update tradeType when initialTradeType changes from props
     useEffect(() => {
         if (initialTradeType !== tradeType) {
-            setPendingType(initialTradeType)
             setTradeType(initialTradeType)
-            setSelectedTrade(null) // Reset selected trade when type changes
-            setTrades([]) // Clear trades when type changes
-            setNextCursor(null) // Reset pagination
-            setHasMore(true) // Reset has more flag
-        }
-    }, [initialTradeType, tradeType])
-
-    // Handle trade type change from switcher
-    const handleTradeTypeChange = useCallback(
-        (newType: string) => {
-            if (newType === tradeType) return
-
-            // Reset selected trade and trades list
             setSelectedTrade(null)
             setTrades([])
             setNextCursor(null)
             setHasMore(true)
-            setTradeType(newType as "inbound" | "outbound" | "completed" | "inactive")
+        }
+    }, [initialTradeType])
 
-            // Manually invalidate queries for the new trade type
-            utils.robloxTrades.fetchTrades.invalidate()
+    const handleTradeTypeChange = useCallback(
+        (newTypeString: string) => {
+            const newType = newTypeString as TradePageLayoutProps["tradeType"]
+            if (newType === tradeType) return
+
+            setPendingType(newType)
+            setSelectedTrade(null)
+            setTrades([])
+            setNextCursor(null)
+            setHasMore(true)
+            setTradeType(newType)
             utils.robloxTrades.getStoredTrades.invalidate()
         },
         [tradeType, utils]
     )
 
-    // Initial fetch of trades
-    const { isLoading: isInitialLoading, data: initialTradesData } =
+    const { isLoading: isQueryLoading, data: queryData, isFetching: isQueryFetching } =
         trpc.robloxTrades.getStoredTrades.useQuery(
             {
                 tradeType,
@@ -146,43 +134,38 @@ function TradePageContent({
                 enabled: isClient,
                 trpc: { context: { skipBatch: true } },
                 refetchOnMount: true,
-                refetchOnReconnect: true
+                refetchOnReconnect: true,
             }
         )
 
-    // When new data is loaded for the pending type, clear pendingType
     useEffect(() => {
-        if (pendingType && tradeType === pendingType && !isInitialLoading) {
+        if (pendingType && tradeType === pendingType && !isQueryFetching && queryData) {
             setPendingType(null)
         }
-    }, [pendingType, tradeType, isInitialLoading])
+    }, [pendingType, tradeType, isQueryFetching, queryData])
 
-    // Process initial trades data when it arrives
     useEffect(() => {
-        if (initialTradesData?.trades && initialTradesData.trades.length > 0) {
-            setTrades(initialTradesData.trades)
-            setNextCursor(initialTradesData.nextCursor)
-            // Only set hasMore to false if we explicitly get null cursor AND fewer trades than page size
+        if (queryData?.trades) {
+            setTrades(queryData.trades)
+            setNextCursor(queryData.nextCursor)
             setHasMore(
-                initialTradesData.nextCursor !== null ||
-                    initialTradesData.trades.length >= PAGE_SIZE
+                queryData.nextCursor !== null ||
+                queryData.trades.length >= PAGE_SIZE
             )
-
-            // Load avatars for the first page - use setTimeout to avoid React setState during render
-            const partnerIds = initialTradesData.trades
-                .map((trade) => trade.tradePartnerId)
-                .filter(Boolean)
-
+            const partnerIds = queryData.trades.map((trade) => trade.tradePartnerId).filter(Boolean)
             if (partnerIds.length > 0) {
-                // Queue avatar loading outside of render cycle
-                setTimeout(() => {
-                    queueAvatarLoading(partnerIds, true)
-                }, 0)
+                setTimeout(() => queueAvatarLoading(partnerIds, true), 0)
             }
-        } else if (initialTradesData) {
+        } else if (queryData) {
+            setTrades([])
+            setNextCursor(queryData.nextCursor)
+            setHasMore(queryData.nextCursor !== null)
+        } else if (!isQueryLoading && !queryData) {
+            setTrades([])
             setHasMore(false)
+            setNextCursor(null)
         }
-    }, [initialTradesData, queueAvatarLoading])
+    }, [queryData, queueAvatarLoading, isQueryLoading, tradeType])
 
     // Function to load more trades
     const loadMoreTrades = useCallback(async () => {
@@ -477,13 +460,30 @@ function TradePageContent({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTrade?.id, selectedTrade?.originalId, utils.robloxTrades.getTradeDetails])
 
-    // Main loading state - show skeleton
-    if (!isClient || pendingType || (isInitialLoading && trades.length === 0)) {
-        return null
+    // Determine if the current queryData (if it exists) has actual trade entries
+    const hasLoadedTradesInQueryData = !!(queryData?.trades && queryData.trades.length > 0);
+
+    const showLoadingState = !isClient ||
+                           pendingType ||
+                           (isQueryLoading && trades.length === 0 && !hasLoadedTradesInQueryData);
+
+    if (showLoadingState) {
+        return (
+            <div className="flex min-h-full flex-col gap-6">
+                <div className="relative flex min-h-full flex-col">
+                    <main className="flex-1 rounded-2xl bg-background p-6 pb-24 shadow-inner">
+                        <div className="mb-6 flex justify-center">
+                            <TradeSwitcher onTypeChange={handleTradeTypeChange} />
+                        </div>
+                        <TradePageSkeleton /> 
+                    </main>
+                </div>
+            </div>
+        );
     }
 
     // Empty state - no trades found
-    if (sortedTrades.length === 0 && !isInitialLoading) {
+    if (trades.length === 0 && !isQueryLoading && !pendingType) {
         return (
             <div className="flex min-h-full flex-col gap-6">
                 <div className="relative flex min-h-full flex-col">
