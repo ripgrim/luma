@@ -1,7 +1,7 @@
 import { tradeItems, trades } from "@/auth-schema"
 import { db } from "@/database/db"
 import { TRPCError } from "@trpc/server"
-import { and, eq, gt } from "drizzle-orm"
+import { and, eq, gt, lt } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import {
@@ -12,13 +12,84 @@ import {
     tradeListResponseSchema
 } from "../types/robloxTrades"
 import { getRoblosecurityTokenForUser, getRobloxHeaders } from "../utils/robloxApiHelpers"
+import { redis } from "@/lib/redis"
+
+// Mapping from getStoredTrades tradeType to TradeStatusType enum
+const tradeTypeToStatusType = {
+    inbound: TradeStatusType.Inbound,
+    outbound: TradeStatusType.Outbound,
+    completed: TradeStatusType.Completed,
+    inactive: TradeStatusType.Inactive,
+    // 'all' is not mapped as it's a special case for getStoredTrades
+};
+
+// Refactored helper function to fetch and store trades
+async function fetchAndStoreRobloxTrades(
+    userId: string,
+    tradeStatusType: TradeStatusType,
+    db: any, // Replace 'any' with your actual Drizzle DB type
+    limit: number = 100, // Default to Roblox API max for fetching
+    sortOrder: "Asc" | "Desc" = "Desc",
+    initialCursor?: string // Allow passing an initial cursor
+) {
+    console.log(`[fetchAndStoreRobloxTrades] Called for user: ${userId}, type: ${tradeStatusType}, limit: ${limit}, cursor: ${initialCursor}`);
+    try {
+        const roblosecurityToken = await getRoblosecurityTokenForUser(userId, db);
+        console.log(
+            `[fetchAndStoreRobloxTrades] Using Roblosecurity Token (first 20 chars): ${roblosecurityToken.substring(0, 20)}... for user: ${userId}`
+        );
+
+        const tradeStatusPathPart = mapTradeType(tradeStatusType);
+        let url = `https://trades.roblox.com/v1/trades/${tradeStatusPathPart}?limit=${limit}&sortOrder=${sortOrder}`;
+        if (initialCursor) {
+            url += `&cursor=${initialCursor}`;
+        }
+
+        console.log(`[fetchAndStoreRobloxTrades] Fetching URL: ${url} for user: ${userId}`);
+        const headers = await getRobloxHeaders(roblosecurityToken);
+        const response = await fetch(url, { method: "GET", headers });
+
+        console.log(
+            `[fetchAndStoreRobloxTrades] Roblox API Response Status: ${response.status} for user: ${userId}`
+        );
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            // Log the error but throw a more specific error for the caller to handle
+            console.error(`[fetchAndStoreRobloxTrades] Roblox API Error (${response.status}) for user ${userId}: ${errorData}`);
+            throw new Error(`Roblox API Error (${response.status}): ${errorData.substring(0, 200)}`);
+        }
+
+        const tradeData = await response.json();
+        // Log the raw API response BEFORE parsing/validation
+        console.log(`[fetchAndStoreRobloxTrades] Raw API response for user ${userId}, type ${tradeStatusType}:`, JSON.stringify(tradeData, null, 2));
+
+        const validatedData = tradeListResponseSchema.parse(tradeData);
+
+        // Store the trades in the database
+        await storeTrades(userId, validatedData.data, tradeStatusPathPart); // tradeStatusPathPart is 'Inbound', 'Outbound', etc.
+
+        console.log(`[fetchAndStoreRobloxTrades] Successfully fetched and stored ${validatedData.data.length} trades for user ${userId}, type: ${tradeStatusType}. Next cursor: ${validatedData.nextPageCursor}`);
+        return {
+            success: true,
+            tradesStored: validatedData.data.length,
+            nextPageCursor: validatedData.nextPageCursor, // Return the next cursor for potential pagination
+            message: `Stored ${validatedData.data.length} trades.`
+        };
+    } catch (error: any) {
+        console.error(`[fetchAndStoreRobloxTrades] Error for user ${userId}, type ${tradeStatusType}:`, error);
+        // Re-throw the error so the calling function knows something went wrong.
+        // It's important not to throw TRPCError here as this is a helper.
+        throw error; // Let the caller (tRPC procedure) handle TRPCError creation
+    }
+}
 
 export const robloxTradesRouter = router({
     fetchTrades: protectedProcedure
         .input(
             z.object({
                 tradeStatusType: z.nativeEnum(TradeStatusType),
-                limit: z.number().min(10).max(100).default(10),
+                limit: z.number().min(10).max(100).default(100), // Keep API limit
                 cursor: z.string().optional(),
                 sortOrder: z.enum(["Asc", "Desc"]).default("Desc")
             })
@@ -26,71 +97,45 @@ export const robloxTradesRouter = router({
         .output(
             z.object({
                 success: z.boolean(),
-                trades: tradeListResponseSchema.optional(),
                 message: z.string().optional(),
-                count: z.number().optional()
+                tradesStored: z.number().optional(),
+                nextPageCursor: z.string().nullable().optional(), // Add this
             })
         )
-        .query(async ({ input, ctx }) => {
-            // Log request information
-            console.log("[robloxTrades.fetchTrades] Request:", {
+        .mutation(async ({ input, ctx }) => { // Changed to .mutation
+            console.log("[robloxTrades.fetchTrades tRPC] Request:", {
                 input,
                 user: ctx.user
-                // headers: ctx.req?.headers // ctx.req might still be useful
-            })
+            });
 
-            const { tradeStatusType, limit, cursor, sortOrder } = input
-            const userId = ctx.user.id
+            const { tradeStatusType, limit, cursor, sortOrder } = input;
+            const userId = ctx.user.id;
 
             try {
-                // Get user's Roblosecurity cookie using the helper from utils
-                const roblosecurityToken = await getRoblosecurityTokenForUser(userId, db)
-
-                console.log(
-                    `[robloxTrades.fetchTrades] Using Roblosecurity Token (first 20 chars): ${roblosecurityToken.substring(0, 20)}... for user: ${userId}`
-                )
-
-                const tradeStatusPathPart = mapTradeType(tradeStatusType)
-                const url = `https://trades.roblox.com/v1/trades/${tradeStatusPathPart}?limit=${limit}&sortOrder=${sortOrder}${cursor ? `&cursor=${cursor}` : ""}`
-
-                console.log(`[robloxTrades.fetchTrades] Fetching URL: ${url} for user: ${userId}`)
-
-                const headers = await getRobloxHeaders(roblosecurityToken)
-
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers
-                })
-
-                console.log(
-                    `[robloxTrades.fetchTrades] Roblox API Response Status: ${response.status} for user: ${userId}`
-                )
-
-                if (!response.ok) {
-                    const errorData = await response.text()
-                    throw new Error(`Roblox API Error (${response.status}): ${errorData}`)
-                }
-
-                const tradeData = await response.json()
-                const validatedData = tradeListResponseSchema.parse(tradeData)
-
-                // Store the trades in the database
-                const tradeType = mapTradeType(tradeStatusType)
-                await storeTrades(userId, validatedData.data, tradeType)
+                // Call the refactored helper function
+                const result = await fetchAndStoreRobloxTrades(
+                    userId,
+                    tradeStatusType,
+                    db, // Pass the db instance
+                    limit,
+                    sortOrder,
+                    cursor
+                );
 
                 return {
-                    success: true,
-                    trades: validatedData,
-                    count: validatedData.data.length
-                }
+                    success: result.success,
+                    message: result.message,
+                    tradesStored: result.tradesStored,
+                    nextPageCursor: result.nextPageCursor,
+                };
             } catch (error: any) {
-                console.error("Error fetching trades:", error)
-
+                console.error("[robloxTrades.fetchTrades tRPC] Error:", error);
+                // Construct a TRPCError to send back to the client
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
-                    message: `Failed to fetch trades: ${error.message}`,
+                    message: `Failed to fetch or store trades: ${error.message || "Unknown error"}`,
                     cause: error
-                })
+                });
             }
         }),
 
@@ -124,15 +169,20 @@ export const robloxTradesRouter = router({
                 if (existingTrade.length > 0 && existingTrade[0].rawData) {
                     try {
                         const parsedData = JSON.parse(existingTrade[0].rawData)
-                        const validatedData = detailedTradeSchema.parse(parsedData)
-
-                        return {
-                            success: true,
-                            trade: validatedData
+                        // Check if 'offers' exists and is an array, indicating detailed data
+                        if (parsedData && Array.isArray(parsedData.offers)) {
+                            const validatedData = detailedTradeSchema.parse(parsedData) // Attempt to parse
+                            console.log(`[getTradeDetails] Successfully parsed stored rawData for trade ID ${tradeId}`);
+                            return {
+                                success: true,
+                                trade: validatedData
+                            }
+                        } else {
+                            console.log(`[getTradeDetails] Stored rawData for trade ID ${tradeId} is not detailed (missing/invalid 'offers'). Fetching from API.`);
                         }
                     } catch (parseError) {
-                        // If we can't parse the stored data, fetch from Roblox API
-                        console.error("Error parsing stored trade data:", parseError)
+                        // If we can't parse the stored data for any reason (e.g. schema mismatch), fetch from Roblox API
+                        console.error(`[getTradeDetails] Error parsing stored rawData for trade ID ${tradeId}. Fetching from API:`, parseError)
                     }
                 }
 
@@ -203,37 +253,16 @@ export const robloxTradesRouter = router({
                     }
                 } catch (parseError: any) {
                     console.error(
-                        `[getTradeDetails] Schema validation error for trade ${tradeId}:`,
+                        `[getTradeDetails] Schema validation error for trade ${tradeId} from API:`,
                         parseError
-                    )
-
-                    // Try to salvage what we can from the data
-                    const partiallyValidatedData = {
-                        ...tradeData,
-                        offers: tradeData.offers?.map((offer: any) => ({
-                            ...offer,
-                            userAssets: offer.userAssets?.map((asset: any) => ({
-                                ...asset,
-                                // Convert membershipType to number if it's a string
-                                membershipType:
-                                    typeof asset.membershipType === "string"
-                                        ? Number.parseInt(asset.membershipType, 10) || 0
-                                        : asset.membershipType
-                            }))
-                        })),
-                        // Default expiration if missing
-                        expiration:
-                            tradeData.expiration || new Date(Date.now() + 86400000).toISOString()
-                    }
-
-                    console.log(
-                        `[getTradeDetails] Returning manually fixed data for trade ${tradeId}`
-                    )
-
-                    return {
-                        success: true,
-                        trade: partiallyValidatedData
-                    }
+                    );
+                    // Also log tradeData here to see what failed validation
+                    console.error(`[getTradeDetails] Failing API data for trade ${tradeId}:`, JSON.stringify(tradeData, null, 2)); 
+                    throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: `Roblox API returned unexpected data structure for trade ${tradeId}. Please check server logs.`,
+                        cause: parseError,
+                    });
                 }
             } catch (error: any) {
                 console.error(`Error fetching trade details for ${tradeId}:`, error)
@@ -254,106 +283,121 @@ export const robloxTradesRouter = router({
                     .enum(["inbound", "outbound", "completed", "inactive", "all"])
                     .default("all"),
                 limit: z.number().min(10).max(100).default(50),
-                cursor: z.string().optional()
+                cursor: z.string().optional() // This cursor is for DB pagination
             })
         )
         .output(
             z.object({
                 success: z.boolean(),
-                trades: z.array(z.any()),
-                nextCursor: z.string().nullable(),
-                count: z.number()
+                trades: z.array(z.any()), // Consider using a more specific schema if possible
+                nextCursor: z.string().nullable(), // DB pagination cursor
+                count: z.number(),
+                message: z.string().optional(), // For messages like "fetched from API"
             })
         )
         .query(async ({ input, ctx }) => {
-            // Log request information including headers and auth context
             console.log("[robloxTrades.getStoredTrades] Request:", {
                 input,
                 user: ctx.user,
-                // headers: ctx.req?.headers,
                 hasAuth: Boolean(ctx.user.id)
-            })
+            });
 
-            const { tradeType, limit, cursor } = input
-            const userId = ctx.user.id
+            const { tradeType, limit, cursor: dbCursor } = input;
+            const userId = ctx.user.id;
+            let message: string | undefined = undefined;
 
             try {
-                // Create an array of conditions to apply
-                const conditions = [eq(trades.userId, userId)]
-
-                // Add trade type filter if not 'all'
-                if (tradeType !== "all") {
-                    conditions.push(eq(trades.tradeType, tradeType))
-                }
-
-                // Add cursor-based pagination
-                if (cursor) {
-                    try {
-                        const decodedCursor = JSON.parse(atob(cursor))
-                        if (decodedCursor.lastId) {
-                            console.log(
-                                `[robloxTrades.getStoredTrades] Using cursor with lastId: ${decodedCursor.lastId}`
-                            )
-                            // Use gt operator for proper "greater than" comparison
-                            conditions.push(gt(trades.originalId, String(decodedCursor.lastId)))
+                const queryDb = async () => {
+                    const conditions = [eq(trades.userId, userId)];
+                    if (tradeType !== "all") {
+                        conditions.push(eq(trades.tradeType, tradeType));
+                    }
+                    if (dbCursor) {
+                        try {
+                            const decodedCursor = JSON.parse(atob(dbCursor));
+                            if (decodedCursor.lastId) {
+                                // Assuming descending order of originalId for typical display
+                                // If you sort ascending by originalId in DB, this needs to be gt
+                                conditions.push(lt(trades.originalId, String(decodedCursor.lastId)));
+                            }
+                        } catch (e) {
+                            console.error("[robloxTrades.getStoredTrades] Error parsing DB cursor:", e);
                         }
-                    } catch (e) {
-                        console.error("Error parsing cursor:", e)
-                        // Continue without applying cursor condition
+                    }
+                    return await db
+                        .select()
+                        .from(trades)
+                        .where(and(...conditions))
+                        .orderBy(trades.originalId) // Ensure consistent order for pagination
+                        .limit(limit + 1);
+                };
+
+                let results = await queryDb();
+
+                if (
+                    results.length === 0 &&
+                    !dbCursor && // Only on initial load for this view
+                    tradeType !== "all" &&
+                    redis // Check if Redis client is available
+                ) {
+                    const apiFetchLockKey = `trades:fetchlock:${userId}:${tradeType}`;
+                    const lastFetchTimestamp = await redis.get<number>(apiFetchLockKey);
+                    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+                    if (!lastFetchTimestamp || lastFetchTimestamp < fiveMinutesAgo) {
+                        console.log(`[robloxTrades.getStoredTrades] No stored ${tradeType} trades for user ${userId}. Attempting API fetch.`);
+                        message = `No stored ${tradeType} trades. Attempting to fetch from Roblox...`;
+                        
+                        const mappedTradeStatusType = tradeTypeToStatusType[tradeType as keyof typeof tradeTypeToStatusType];
+                        
+                        if (mappedTradeStatusType !== undefined) {
+                            try {
+                                // We call with default limit for Roblox API to get a full page
+                                // The 'limit' from input is for DB pagination of already stored trades
+                                await fetchAndStoreRobloxTrades(userId, mappedTradeStatusType, db, 100, "Desc");
+                                await redis.set(apiFetchLockKey, Date.now(), { ex: 10 * 60 }); // Lock for 10 mins to be safe
+                                message = `Fetched latest ${tradeType} trades from Roblox.`;
+                                results = await queryDb(); // Re-query the DB
+                            } catch (fetchError: any) {
+                                console.error(`[robloxTrades.getStoredTrades] API fetch failed for ${tradeType} user ${userId}:`, fetchError);
+                                message = `Failed to fetch ${tradeType} trades from Roblox: ${fetchError.message?.substring(0,100) || 'Unknown API error'}`;
+                                // Proceed with empty 'results' from DB, but include the error message
+                            }
+                        } else {
+                             console.warn(`[robloxTrades.getStoredTrades] Could not map tradeType '${tradeType}' to TradeStatusType for API fetch.`);
+                             message = `Could not map tradeType '${tradeType}' for API fetch.`;
+                        }
+                    } else {
+                        console.log(`[robloxTrades.getStoredTrades] API fetch for ${tradeType} user ${userId} skipped due to recent fetch.`);
+                        message = `Recently checked for ${tradeType} trades. Displaying stored data.`;
                     }
                 }
 
-                // Apply all conditions together
-                const results = await db
-                    .select()
-                    .from(trades)
-                    .where(and(...conditions))
-                    .orderBy(trades.originalId) // Order by originalId to ensure consistent pagination
-                    .limit(limit + 1)
-
-                console.log(
-                    `[robloxTrades.getStoredTrades] Found ${results.length} trades for user ${userId}, type: ${tradeType}`
-                )
-
-                // Log more details about the trades we found
-                if (results.length > 0) {
-                    console.log(
-                        `[robloxTrades.getStoredTrades] First trade originalId: ${results[0].originalId}, Last trade originalId: ${results[results.length - 1].originalId}`
-                    )
-                    console.log(
-                        `[robloxTrades.getStoredTrades] Trade IDs in this batch: ${results.map((t) => t.originalId).join(", ")}`
-                    )
-                }
-
-                // Check if there's a next page
-                let nextCursor = null
+                let nextDbCursor = null;
                 if (results.length > limit) {
-                    const lastItem = results[limit - 1]
-                    nextCursor = btoa(JSON.stringify({ lastId: lastItem.originalId }))
-                    console.log(
-                        `[robloxTrades.getStoredTrades] Generated next cursor for lastId: ${lastItem.originalId}`
-                    )
-                    results.pop() // Remove the extra item
+                    const lastItem = results[limit - 1];
+                    nextDbCursor = btoa(JSON.stringify({ lastId: lastItem.originalId }));
+                    results.pop();
                 } else {
-                    console.log(
-                        `[robloxTrades.getStoredTrades] No more trades available beyond this batch`
-                    )
+                     console.log(`[robloxTrades.getStoredTrades] No more DB trades available beyond this batch for type: ${tradeType}`);
                 }
+                
+                console.log(`[robloxTrades.getStoredTrades] Returning ${results.length} trades for user ${userId}, type: ${tradeType}. Next DB cursor: ${nextDbCursor}`);
 
                 return {
                     success: true,
                     trades: results,
-                    nextCursor,
-                    count: results.length
-                }
+                    nextCursor: nextDbCursor,
+                    count: results.length,
+                    message,
+                };
             } catch (error: any) {
-                console.error("Error fetching stored trades:", error)
-
+                console.error("[robloxTrades.getStoredTrades] Error:", error);
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
                     message: `Failed to fetch stored trades: ${error.message}`,
                     cause: error
-                })
+                });
             }
         }),
 
@@ -519,170 +563,216 @@ export const robloxTradesRouter = router({
 
 // Helper function to store trades in the database
 async function storeTrades(userId: string, tradeList: any[], tradeType: string) {
-    try {
-        // For each trade, insert if not exists, update if exists
-        for (const tradeData of tradeList) {
-            const originalId = String(tradeData.id)
-            const partnerUser = tradeData.user
+    if (!tradeList || tradeList.length === 0) {
+        console.log("[storeTrades] No trades provided to store.")
+        return
+    }
 
-            // Check if trade already exists
+    console.log(`[storeTrades] Storing ${tradeList.length} trades of type '${tradeType}' for user ${userId}`)
+
+    const tradesToInsertOrUpdate = tradeList.map((trade) => {
+        const originalIdStr = String(trade.id);
+        let expirationDate: Date | null = null;
+        if (trade.expiration) {
+            try {
+                expirationDate = new Date(trade.expiration);
+                if (isNaN(expirationDate.getTime())) {
+                    console.warn(`[storeTrades] Invalid expiration date for trade ${originalIdStr}: ${trade.expiration}. Setting to null.`);
+                    expirationDate = null;
+                }
+            } catch (e) {
+                console.warn(`[storeTrades] Error parsing expiration date for trade ${originalIdStr}: ${trade.expiration}. Setting to null.`, e);
+                expirationDate = null;
+            }
+        }
+
+        return {
+            userId: userId,
+            originalId: originalIdStr,
+            tradePartnerId: String(trade.user.id), // DB schema name
+            tradePartnerName: trade.user.name,    // DB schema name
+            status: mapTradeStatus(trade.status),
+            tradeType: tradeType, 
+            created: new Date(trade.created),      // DB schema name
+            expiration: expirationDate,            // DB schema name
+            isActive: trade.isActive,
+            // lastChecked: new Date(), // Not in schema explicitly, part of updatedAt
+            rawData: null 
+        };
+    });
+
+    try {
+        for (const tradeData of tradesToInsertOrUpdate) {
             const existingTrade = await db
-                .select()
+                .select({ id: trades.id }) // Only select id
                 .from(trades)
-                .where(and(eq(trades.originalId, originalId), eq(trades.userId, userId)))
+                .where(and(eq(trades.originalId, tradeData.originalId), eq(trades.userId, tradeData.userId)))
                 .limit(1)
 
-            const status =
-                typeof tradeData.status === "number"
-                    ? mapTradeStatus(tradeData.status)
-                    : tradeData.status
-
-            const tradeValues = {
-                userId,
-                tradePartnerId: String(partnerUser.id),
-                tradePartnerName: partnerUser.name,
-                tradePartnerDisplayName: partnerUser.displayName || null,
-                created: new Date(tradeData.created),
-                expiration: new Date(tradeData.expiration),
-                isActive: tradeData.isActive,
-                status,
-                tradeType,
-                rawData: JSON.stringify(tradeData),
-                originalId,
-                updatedAt: new Date()
-            }
+            const { userId: uId, originalId: oId, ...dataToSet } = tradeData; // Exclude userId and originalId from dataToSet for update
 
             if (existingTrade.length === 0) {
-                // Insert new trade
                 await db.insert(trades).values({
-                    ...tradeValues,
-                    createdAt: new Date()
-                })
+                    ...tradeData, // Contains all necessary fields including userId, originalId
+                    updatedAt: new Date(), // Set on insert
+                    createdAt: new Date()  // Set on insert
+                });
             } else {
-                // Update existing trade
-                await db.update(trades).set(tradeValues).where(eq(trades.id, existingTrade[0].id))
+                await db.update(trades).set({
+                    ...dataToSet, // Does not contain userId or originalId
+                    updatedAt: new Date()
+                }).where(eq(trades.id, existingTrade[0].id));
             }
         }
     } catch (error) {
         console.error("Error storing trades in database:", error)
-        throw error
+        throw error // Re-throw to be caught by caller
     }
 }
 
 // Helper function to store detailed trade data
-async function storeDetailedTrade(userId: string, tradeData: any) {
-    try {
-        const originalId = String(tradeData.id)
-        const partnerUser = tradeData.user
+async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof detailedTradeSchema>) {
+    // 'tradeData' here is the validated output from detailedTradeSchema
+    console.log(`[storeDetailedTrade] Storing detailed trade ID ${tradeData.id} for user ${userId}`)
+    const originalIdStr = String(tradeData.id)
 
-        // Determine trade type based on status
-        let tradeType = "unknown"
-        if (typeof tradeData.status === "number") {
-            if (tradeData.status === 0 || tradeData.status === 1) {
-                tradeType = "inbound" // Assuming inbound for now, might need to check offers
-            } else if (tradeData.status === 2) {
-                tradeType = "completed"
-            } else if (tradeData.status >= 3) {
-                tradeType = "inactive"
-            }
-        } else if (typeof tradeData.status === "string") {
-            if (tradeData.status === "Open" || tradeData.status === "Pending") {
-                tradeType = "inbound" // Assuming inbound for now
-            } else if (tradeData.status === "Completed") {
-                tradeType = "completed"
-            } else {
-                tradeType = "inactive"
-            }
-        }
+    const existingTradeEntry = await db
+        .select({ tradeType: trades.tradeType, id: trades.id })
+        .from(trades)
+        .where(and(eq(trades.originalId, originalIdStr), eq(trades.userId, userId)))
+        .limit(1)
 
-        const status =
-            typeof tradeData.status === "number"
-                ? mapTradeStatus(tradeData.status)
-                : tradeData.status
-
-        // Check if trade exists
-        const existingTrade = await db
-            .select()
-            .from(trades)
-            .where(and(eq(trades.originalId, originalId), eq(trades.userId, userId)))
-            .limit(1)
-
-        // Common trade values
-        const tradeValues = {
-            userId,
-            tradePartnerId: String(partnerUser.id),
-            tradePartnerName: partnerUser.name,
-            tradePartnerDisplayName: partnerUser.displayName || null,
-            created: new Date(tradeData.created),
-            expiration: new Date(tradeData.expiration),
-            isActive: tradeData.isActive,
-            status,
-            tradeType,
-            rawData: JSON.stringify(tradeData),
-            originalId,
-            updatedAt: new Date()
-        }
-
-        let tradeId: string
-
-        if (existingTrade.length === 0) {
-            // Insert new trade and get the ID
-            const [insertResult] = await db
-                .insert(trades)
-                .values({
-                    ...tradeValues,
-                    createdAt: new Date()
-                })
-                .returning({ id: trades.id })
-
-            tradeId = insertResult.id
+    let currentTradeTypeInDb: string;
+    if (existingTradeEntry.length > 0 && existingTradeEntry[0].tradeType) {
+        currentTradeTypeInDb = existingTradeEntry[0].tradeType;
+        console.log(`[storeDetailedTrade] Found existing trade ${originalIdStr} in DB with tradeType: ${currentTradeTypeInDb}`)
+    } else {
+        // Infer initial type if not in DB or tradeType is somehow null (though schema says notNull)
+        // tradeData.user is the initiator of the trade
+        if (String(tradeData.user.id) === userId) {
+            currentTradeTypeInDb = "Outbound"; // Current user initiated this trade
         } else {
-            // Update existing trade
-            tradeId = existingTrade[0].id
-            await db.update(trades).set(tradeValues).where(eq(trades.id, tradeId))
+            currentTradeTypeInDb = "Inbound";  // Someone else initiated this trade with current user
         }
+        console.log(`[storeDetailedTrade] No existing trade ${originalIdStr} in DB or tradeType was null/empty. Inferred initial type: ${currentTradeTypeInDb}`);
+    }
 
-        // Now handle the trade items
-        if (tradeData.offers && Array.isArray(tradeData.offers)) {
-            // Clear existing items for this trade to avoid duplicates
-            await db.delete(tradeItems).where(eq(tradeItems.tradeId, tradeId))
+    let finalTradeType = currentTradeTypeInDb;
+    const apiStatus = mapTradeStatus(tradeData.status);
 
-            for (let i = 0; i < tradeData.offers.length; i++) {
-                const offer = tradeData.offers[i]
-                const offerType = i === 0 ? "user_offer" : "partner_offer"
+    if (apiStatus === "Completed") {
+        finalTradeType = "completed"
+    } else if (["Expired", "Declined", "Inactive", "Cancelled"].includes(apiStatus)) {
+        finalTradeType = "inactive"
+    } else if (apiStatus === "Open" || apiStatus === "Pending") {
+        // For active statuses, preserve the determined currentTradeTypeInDb.
+        // This correctly keeps "Outbound" if it was an outbound trade that's still open/pending.
+        finalTradeType = currentTradeTypeInDb; 
+        console.log(`[storeDetailedTrade] Trade ${originalIdStr} is ${apiStatus}. Preserving/Using determined type: ${finalTradeType}`);
+    } else { // E.g. apiStatus is "Unknown"
+        console.warn(`[storeDetailedTrade] Unknown API status '${apiStatus}' for trade ${originalIdStr}. Using determined type: ${finalTradeType}`)
+    }
+    
+    let expirationDate: Date | null = null;
+    if (tradeData.expiration) {
+        try {
+            expirationDate = new Date(tradeData.expiration);
+            if (isNaN(expirationDate.getTime())) {
+                console.warn(`[storeDetailedTrade] Invalid expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Setting to null.`);
+                expirationDate = null;
+            }
+        } catch (e) {
+            console.warn(`[storeDetailedTrade] Error parsing expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Setting to null.`, e);
+            expirationDate = null;
+        }
+    } else {
+        console.log(`[storeDetailedTrade] No expiration date provided for trade ${originalIdStr}. Setting to null.`);
+    }
 
-                // Save Robux amount if present
-                if (offer.robux && offer.robux > 0) {
+    // Prepare payload with DB schema field names
+    const dbTradePayload = {
+        tradePartnerId: String(tradeData.user.id),
+        tradePartnerName: tradeData.user.name,
+        // tradePartnerDisplayName is optional in schema, tradeData.user.displayName is optional
+        tradePartnerDisplayName: tradeData.user.displayName || null,
+        status: apiStatus,
+        tradeType: finalTradeType, // Now guaranteed to be non-null string
+        created: new Date(tradeData.created),
+        expiration: expirationDate, 
+        isActive: tradeData.isActive,
+        rawData: JSON.stringify(tradeData)
+        // originalId and userId are handled in insert/update specifically
+    };
+
+    let tradeDbId: string;
+
+    if (existingTradeEntry.length === 0) {
+        console.log(`[storeDetailedTrade] Inserting new trade ${originalIdStr} with type: ${finalTradeType}`);
+        const [insertResult] = await db
+            .insert(trades)
+            .values({
+                ...dbTradePayload,
+                userId: userId,         // Add userId for insert
+                originalId: originalIdStr, // Add originalId for insert
+                createdAt: new Date(),  // Set on insert
+                updatedAt: new Date()   // Set on insert
+            })
+            .returning({ id: trades.id });
+        if (!insertResult || !insertResult.id) {
+            throw new Error("Failed to insert trade and get ID.")
+        }
+        tradeDbId = insertResult.id;
+    } else {
+        tradeDbId = existingTradeEntry[0].id;
+        console.log(`[storeDetailedTrade] Updating existing trade ${originalIdStr} (DB ID: ${tradeDbId}). Original DB type: ${existingTradeEntry[0].tradeType || 'N/A'}, New type: ${finalTradeType}, Status from API: ${apiStatus}`);
+        await db.update(trades).set({
+            ...dbTradePayload,
+            updatedAt: new Date() // Set on update
+        }).where(eq(trades.id, tradeDbId));
+    }
+
+    // Now handle the trade items
+    if (tradeData.offers && Array.isArray(tradeData.offers)) {
+        // Clear existing items for this trade to avoid duplicates
+        await db.delete(tradeItems).where(eq(tradeItems.tradeId, tradeDbId)); // Use tradeDbId
+
+        for (let i = 0; i < tradeData.offers.length; i++) {
+            const offer = tradeData.offers[i];
+            const offerType = String(offer.user.id) === userId ? "user_offer" : "partner_offer";
+            // Corrected offerType: Roblox API's offers array:
+            // offers[0] is the authenticated user's offer.
+            // offers[1] is the other user's offer.
+            // My previous logic based on index i was potentially flawed if tradeData.user (initiator) wasn't used.
+            // Let's assume offers[0].user.id is THIS user (userId) IF it's an outbound trade detail,
+            // or if it's an inbound trade where the OTHER party is offers[0].user.
+            // The problem: offers array structure is fixed: offers[0] = you, offers[1] = them.
+
+            const offerSide = i === 0 ? "user_offer" : "partner_offer"; // This is simpler and likely what Roblox intends.
+
+            if (offer.robux && offer.robux > 0) {
+                await db.insert(tradeItems).values({
+                    tradeId: tradeDbId, // Use tradeDbId
+                    assetId: "robux", 
+                    assetName: "Robux",
+                    offerType: offerSide,
+                    robuxAmount: offer.robux,
+                    // createdAt and updatedAt have defaultNow()
+                });
+            }
+
+            if (offer.userAssets && Array.isArray(offer.userAssets)) {
+                for (const asset of offer.userAssets) {
                     await db.insert(tradeItems).values({
-                        tradeId,
-                        assetId: "robux", // Special case for Robux
-                        assetName: "Robux",
-                        offerType,
-                        robuxAmount: offer.robux,
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    })
-                }
-
-                // Save each asset in the offer
-                if (offer.userAssets && Array.isArray(offer.userAssets)) {
-                    for (const asset of offer.userAssets) {
-                        await db.insert(tradeItems).values({
-                            tradeId,
-                            assetId: String(asset.assetId),
-                            assetName: asset.name,
-                            serialNumber: asset.serialNumber || null,
-                            recentAveragePrice: asset.recentAveragePrice || null,
-                            offerType,
-                            createdAt: new Date(),
-                            updatedAt: new Date()
-                        })
-                    }
+                        tradeId: tradeDbId, // Use tradeDbId
+                        assetId: String(asset.assetId),
+                        assetName: asset.name,
+                        serialNumber: asset.serialNumber || null,
+                        recentAveragePrice: asset.recentAveragePrice || null,
+                        offerType: offerSide,
+                        // createdAt and updatedAt have defaultNow()
+                    });
                 }
             }
         }
-    } catch (error) {
-        console.error("Error storing detailed trade data:", error)
-        throw error
     }
 }

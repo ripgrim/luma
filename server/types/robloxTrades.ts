@@ -39,7 +39,7 @@ export const tradeListItemSchema = z.object({
     id: z.number().or(z.string()),
     user: userSchema,
     created: z.string(),
-    expiration: z.string(),
+    expiration: z.string().optional(),
     isActive: z.boolean(),
     status: z.string().or(z.number())
 })
