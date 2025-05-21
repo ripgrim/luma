@@ -91,5 +91,6 @@ export const earlyAccess = pgTable('early_access', {
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
     isEarlyAccess: boolean('is_early_access').notNull().default(false),
+    emailVerified: boolean('email_verified').notNull().default(false),
     hasUsedTicket: text('has_used_ticket').default(''),
-});
+})
