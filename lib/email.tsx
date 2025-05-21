@@ -1,8 +1,11 @@
 import VerificationCodeEmail from "@/components/early-access/email"
 import { Resend } from "resend"
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend with API key (with error handling)
+const resendApiKey = process.env.RESEND_API_KEY
+const resend = resendApiKey 
+  ? new Resend(resendApiKey) 
+  : null
 
 // Generate a random 6-digit code
 export function generateVerificationCode(): string {
@@ -12,6 +15,11 @@ export function generateVerificationCode(): string {
 // Send verification email
 export async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
     try {
+        if (!resend) {
+            console.error("Resend API key is missing")
+            return false
+        }
+
         const { data, error } = await resend.emails.send({
             from: "Luma <noreply@ripgrim.com>",
             to: email,

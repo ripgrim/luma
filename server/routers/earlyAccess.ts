@@ -13,13 +13,22 @@ import { publicProcedure, router } from "../trpc"
 const EMAIL_REGEX =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
-// Set up rate limiting - 2 requests per 30 minutes
-const ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(2, "30m"),
-    analytics: true,
-    prefix: "ratelimit:early-access"
-})
+// Set up rate limiting - 2 requests per 30 minutes (if Redis is available)
+let ratelimit: Ratelimit | null = null
+try {
+    if (redis) {
+        ratelimit = new Ratelimit({
+            redis,
+            limiter: Ratelimit.slidingWindow(2, "30m"),
+            analytics: true,
+            prefix: "ratelimit:early-access"
+        })
+    } else {
+        console.warn("Redis client not available. Rate limiting is disabled.")
+    }
+} catch (error) {
+    console.error("Failed to initialize rate limiter:", error)
+}
 
 // Safe function to get IP from request
 function getClientIp(req: any): string {
@@ -67,15 +76,19 @@ export const earlyAccessRouter = router({
                 // Get IP address for rate limiting
                 const ipAddress = getClientIp(ctx.req)
 
-                // Apply rate limiting
-                const { success, limit, reset, remaining } = await ratelimit.limit(ipAddress)
-
-                // if (!success) {
-                //   throw new TRPCError({
-                //     code: 'TOO_MANY_REQUESTS',
-                //     message: 'Too many requests. Please try again later.',
-                //   });
-                // }
+                // Apply rate limiting if available
+                let ratelimitInfo = { success: true, limit: 0, reset: 0, remaining: 0 }
+                if (ratelimit) {
+                    ratelimitInfo = await ratelimit.limit(ipAddress)
+                    
+                    // Uncomment to enforce rate limiting
+                    // if (!ratelimitInfo.success) {
+                    //   throw new TRPCError({
+                    //     code: 'TOO_MANY_REQUESTS',
+                    //     message: 'Too many requests. Please try again later.',
+                    //   });
+                    // }
+                }
 
                 // Validate email
                 const { email } = input
@@ -130,11 +143,7 @@ export const earlyAccessRouter = router({
                             : "Successfully joined early access waiting list",
                         emailSent,
                         userExists,
-                        rateLimit: {
-                            limit,
-                            remaining,
-                            reset
-                        }
+                        rateLimit: ratelimitInfo
                     }
                 } catch (err: any) {
                     // Re-throw other database errors
@@ -232,18 +241,28 @@ export const earlyAccessRouter = router({
         .mutation(async ({ ctx, input }) => {
             const { email } = input
 
-            // Apply rate limiting for resending codes (more strict)
+            // Apply rate limiting for resending codes (if Redis is available)
+            let rateLimitSuccess = true
             const ipAddress = getClientIp(ctx.req)
-            const resendLimit = new Ratelimit({
-                redis,
-                limiter: Ratelimit.slidingWindow(3, "30m"), // 3 requests per 30 min
-                analytics: true,
-                prefix: "ratelimit:resend-code"
-            })
+            
+            if (redis) {
+                try {
+                    const resendLimit = new Ratelimit({
+                        redis,
+                        limiter: Ratelimit.slidingWindow(3, "30m"), // 3 requests per 30 min
+                        analytics: true,
+                        prefix: "ratelimit:resend-code"
+                    })
 
-            const { success } = await resendLimit.limit(ipAddress)
+                    const { success } = await resendLimit.limit(ipAddress)
+                    rateLimitSuccess = success
+                } catch (error) {
+                    console.error("Error during rate limiting:", error)
+                    // Continue without rate limiting
+                }
+            }
 
-            if (!success) {
+            if (!rateLimitSuccess) {
                 throw new TRPCError({
                     code: "TOO_MANY_REQUESTS",
                     message: "Too many code requests. Please try again later."
