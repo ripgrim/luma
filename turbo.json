@@ -1,5 +1,6 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "envMode": "loose",
     "tasks": {
         "build": {
             "dependsOn": ["^build"],
@@ -13,5 +14,18 @@
             "cache": false
         }
     },
-    "globalEnv": ["BETTER_AUTH_SECRET", "DATABASE_URL"]
+    "globalEnv": [
+        "BETTER_AUTH_SECRET",
+        "DATABASE_URL",
+        "ROBLOX_CLIENT_ID",
+        "ROBLOX_CLIENT_SECRET",
+        "AUTUMN_SECRET_KEY",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_TEST_KEY",
+        "NEXT_PUBLIC_POSTHOG_KEY",
+        "NEXT_PUBLIC_POSTHOG_HOST",
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
+        "RESEND_API_KEY"
+    ]
 }
