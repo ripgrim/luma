@@ -1,0 +1,1 @@
+ALTER TABLE "trades" ALTER COLUMN "expiration" DROP NOT NULL;
