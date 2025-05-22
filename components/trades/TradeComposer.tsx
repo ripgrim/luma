@@ -71,6 +71,12 @@ const knownContactsData: Recipient[] = [
     // Add up to 3 known contacts
 ];
 
+/**
+ * Renders a visual slot displaying an item's image and name.
+ *
+ * @param item - The item to display, including its image and name.
+ * @returns A styled component showing the item's image with its name overlaid at the bottom.
+ */
 function ItemSlot({ item }: { item: ItemData }) {
     return (
         <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-zinc-800">
@@ -91,7 +97,14 @@ function ItemSlot({ item }: { item: ItemData }) {
     )
 }
 
-// Main Trade Composer Component
+/**
+ * Renders an interactive UI for composing and managing item trades, including recipient selection, trade item overview, and AI-generated trade summary.
+ *
+ * Allows users to select multiple recipients, view and manage trade items on both sides, and access additional send options. Includes animated dropdowns, keyboard shortcuts, and an AI summary feature to evaluate the trade.
+ *
+ * @param className - Optional CSS class for custom styling of the trade composer container.
+ * @returns The trade composer React component.
+ */
 export default function TradeComposer({ className }: { className?: string }) {
     const [showSummary, setShowSummary] = useState(false)
     const [showSendOptionsDropdown, setShowSendOptionsDropdown] = useState(false)

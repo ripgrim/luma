@@ -6,6 +6,13 @@ import { useRouter } from "next/navigation"
 import { useShortcuts } from "./use-hotkey-utils"
 import { useQueryState } from "nuqs"
 
+/**
+ * Registers and manages global keyboard shortcuts for navigation and UI actions.
+ *
+ * Sets up handlers for global hotkeys such as focusing search, navigating to key routes, toggling the sidebar, and opening the trade composer. Shortcuts are filtered by the "global" scope and registered with the appropriate handlers. No UI is rendered.
+ *
+ * @remark Logs warnings if sidebar controls are unavailable or if expected UI elements (like the search input) are not found when a shortcut is triggered.
+ */
 export function GlobalHotkeys() {
     const router = useRouter()
     const sidebarControls = useSidebar()

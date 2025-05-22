@@ -10,6 +10,11 @@ import { HomeIcon, KeyIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
+/**
+ * Renders the main dashboard page with summary cards, recent trades, and history sections.
+ *
+ * Displays an authentication overlay if the user's Roblox security cookie is unverified or still loading, prompting the user to complete authentication before accessing dashboard content.
+ */
 export default function DashboardPage() {
     const trades = [
         { status: "received", text: "Received" },
