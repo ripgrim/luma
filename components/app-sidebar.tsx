@@ -2,11 +2,9 @@
 
 import { SquareTerminal, Archive, AlertCircle, Trash2, MessageSquare, Settings as SettingsIcon, HomeIcon } from "lucide-react"
 import type * as React from "react"
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
 import { useIsMobile } from "@/hooks/use-mobile"
-import Image from "next/image"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -30,26 +28,23 @@ import {
 import { useSession } from "@/hooks/auth-hooks"
 import { PencilCompose } from "./icons/icons"
 import CreateTrade from "./trades/create-trade"
-import TradeComposer from "@/components/trades/TradeComposer"
 
-import { ROOT_PAGE } from "@/lib/constants"
 import { useQueryState } from "nuqs"
 
 const sidebarData = {
     profile: {
         name: "User",
-        verified: true,
+        verified: false,
         email: "user@example.com",
         avatar: "/luma-icon.png",
     },
     core: [
-        { title: "Dashboard", icon: HomeIcon, url: "/dashboard", isActive: true },
+        { title: "Dashboard", icon: HomeIcon, url: "/dashboard" },
         {
             title: "Trades",
             count: 10,
             url: "/trades",
             icon: SquareTerminal,
-            isActive: false,
             dropdown: true,
             items: [
                 {
@@ -78,7 +73,7 @@ const sidebarData = {
     ],
     footer: [
         { title: "Feedback", icon: MessageSquare, url: "/feedback" },
-        { title: "Settings", icon: SettingsIcon, url: "/settings" }
+        { title: "Settings", icon: SettingsIcon, url: "/auth/settings" }
     ]
 };
 
@@ -111,7 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <DialogDescription></DialogDescription>
 
                         <DialogTrigger asChild>
-                            <button className="inline-flex h-8 w-full items-center justify-center gap-1 self-stretch overflow-hidden rounded-md border border-gray-200 bg-transparent text-black dark:border-none dark:bg-gradient-to-b dark:from-white/20 dark:to-white/10 dark:text-white dark:outline dark:outline-1 dark:outline-offset-[-1px] dark:outline-white/5">
+                            <button type="button" className="inline-flex h-8 w-full items-center justify-center gap-1 self-stretch overflow-hidden rounded-md border border-gray-200 bg-transparent text-black dark:border-none dark:bg-gradient-to-b dark:from-white/20 dark:to-white/10 dark:text-white dark:outline dark:outline-1 dark:outline-offset-[-1px] dark:outline-white/5">
                                 {state === 'collapsed' && !isMobile ? (
                                     <PencilCompose className="fill-iconLight dark:fill-iconDark mt-0.5 text-black" />
                                 ) : (

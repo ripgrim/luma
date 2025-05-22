@@ -564,216 +564,172 @@ export const robloxTradesRouter = router({
 // Helper function to store trades in the database
 async function storeTrades(userId: string, tradeList: any[], tradeType: string) {
     if (!tradeList || tradeList.length === 0) {
-        console.log("[storeTrades] No trades provided to store.")
-        return
+        console.log("[storeTrades] No trades to store.");
+        return;
     }
 
-    console.log(`[storeTrades] Storing ${tradeList.length} trades of type '${tradeType}' for user ${userId}`)
+    console.log(`[storeTrades] Storing ${tradeList.length} trades of type '${tradeType}' for user ${userId}`);
 
-    const tradesToInsertOrUpdate = tradeList.map((trade) => {
-        const originalIdStr = String(trade.id);
-        let expirationDate: Date | null = null;
-        if (trade.expiration) {
+    await db.transaction(async (trx) => {
+        console.log(`[storeTrades] Starting transaction for user ${userId}, type '${tradeType}'`);
+        for (const trade of tradeList) {
+            const mappedStatus = mapTradeStatus(trade.status);
+            const dbTradePayload = {
+                originalId: String(trade.id),
+                userId: userId,
+                tradePartnerId: String(trade.user.id),
+                tradePartnerName: trade.user.name,
+                created: new Date(trade.created),
+                expiration: trade.expiration ? new Date(trade.expiration) : null, // Already handled nullability
+                isActive: trade.isActive,
+                status: mappedStatus, // Use the mapped status
+                tradeType: tradeType, // 'Inbound', 'Outbound', etc.
+                // rawData can be added here if needed for simple list items, but usually for detailedTrade
+            };
+
             try {
-                expirationDate = new Date(trade.expiration);
-                if (isNaN(expirationDate.getTime())) {
-                    console.warn(`[storeTrades] Invalid expiration date for trade ${originalIdStr}: ${trade.expiration}. Setting to null.`);
-                    expirationDate = null;
-                }
-            } catch (e) {
-                console.warn(`[storeTrades] Error parsing expiration date for trade ${originalIdStr}: ${trade.expiration}. Setting to null.`, e);
-                expirationDate = null;
+                // Use trx for operations within the transaction
+                await trx
+                    .insert(trades)
+                    .values(dbTradePayload)
+                    .onConflictDoUpdate({
+                        target: [trades.originalId, trades.userId],
+                        set: {
+                            // Ensure all relevant fields are updated on conflict
+                            tradePartnerId: dbTradePayload.tradePartnerId,
+                            tradePartnerName: dbTradePayload.tradePartnerName,
+                            created: dbTradePayload.created,
+                            expiration: dbTradePayload.expiration,
+                            isActive: dbTradePayload.isActive,
+                            status: dbTradePayload.status,
+                            tradeType: dbTradePayload.tradeType,
+                            // rawData update if applicable
+                            updatedAt: new Date() // Explicitly set updatedAt
+                        }
+                    });
+                // console.log(`[storeTrades] Successfully upserted trade ID ${trade.id} for user ${userId}`);
+            } catch (error) {
+                console.error(`[storeTrades] Error upserting trade ID ${trade.id} for user ${userId} within transaction:`, error);
+                // If an error occurs, the transaction will be rolled back automatically by Drizzle/db driver
+                throw error; // Re-throw to ensure transaction rollback
             }
         }
-
-        return {
-            userId: userId,
-            originalId: originalIdStr,
-            tradePartnerId: String(trade.user.id), // DB schema name
-            tradePartnerName: trade.user.name,    // DB schema name
-            status: mapTradeStatus(trade.status),
-            tradeType: tradeType, 
-            created: new Date(trade.created),      // DB schema name
-            expiration: expirationDate,            // DB schema name
-            isActive: trade.isActive,
-            // lastChecked: new Date(), // Not in schema explicitly, part of updatedAt
-            rawData: null 
-        };
+        console.log(`[storeTrades] Transaction committed for user ${userId}, type '${tradeType}'`);
     });
-
-    try {
-        for (const tradeData of tradesToInsertOrUpdate) {
-            const existingTrade = await db
-                .select({ id: trades.id }) // Only select id
-                .from(trades)
-                .where(and(eq(trades.originalId, tradeData.originalId), eq(trades.userId, tradeData.userId)))
-                .limit(1)
-
-            const { userId: uId, originalId: oId, ...dataToSet } = tradeData; // Exclude userId and originalId from dataToSet for update
-
-            if (existingTrade.length === 0) {
-                await db.insert(trades).values({
-                    ...tradeData, // Contains all necessary fields including userId, originalId
-                    updatedAt: new Date(), // Set on insert
-                    createdAt: new Date()  // Set on insert
-                });
-            } else {
-                await db.update(trades).set({
-                    ...dataToSet, // Does not contain userId or originalId
-                    updatedAt: new Date()
-                }).where(eq(trades.id, existingTrade[0].id));
-            }
-        }
-    } catch (error) {
-        console.error("Error storing trades in database:", error)
-        throw error // Re-throw to be caught by caller
-    }
 }
 
 // Helper function to store detailed trade data
 async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof detailedTradeSchema>) {
-    // 'tradeData' here is the validated output from detailedTradeSchema
-    console.log(`[storeDetailedTrade] Storing detailed trade ID ${tradeData.id} for user ${userId}`)
-    const originalIdStr = String(tradeData.id)
+    console.log(`[storeDetailedTrade] Storing detailed trade ID ${tradeData.id} for user ${userId}`);
 
-    // Determine tradeType based on existing logic or sensible defaults
-    // This section reverts to a structure closer to what might have been before,
-    // focusing on using tradeData.user for partner info and tradeData.status for type.
+    // Determine tradeType (can be complex, this is a simplified example)
     let finalTradeType: string;
     const apiStatus = mapTradeStatus(tradeData.status);
+    if (apiStatus === "Completed") finalTradeType = "completed";
+    else if (["Expired", "Declined", "Inactive", "Cancelled"].includes(apiStatus)) finalTradeType = "inactive";
+    else finalTradeType = (tradeData.offers && tradeData.offers.length > 0 && String(tradeData.offers[0].user.id) === userId) ? "outbound" : "inbound";
 
-    // Simplified trade type determination logic (closer to original intent)
-    if (apiStatus === "Completed") {
-        finalTradeType = "completed";
-    } else if (["Expired", "Declined", "Inactive", "Cancelled"].includes(apiStatus)) {
-        finalTradeType = "inactive";
-    } else { // "Open", "Pending", or other active states
-        // Infer based on who the tradeData.user is. If it's the authenticated user, it's an Outbound from their perspective of initiating.
-        // If tradeData.user is the *other* party, it's Inbound.
-        // Roblox API's /v1/trades/{tradeId} endpoint, the 'user' object in the root is the trade partner.
-        // The authenticated user's details are usually in offers[0].user.id
-        if (tradeData.offers && tradeData.offers.length > 0 && String(tradeData.offers[0].user.id) === userId) {
-            finalTradeType = "outbound";
-        } else {
-            finalTradeType = "inbound"; // Default or if offer[0] is not the current user
-        }
-        console.log(`[storeDetailedTrade] Trade ${originalIdStr} is ${apiStatus}. Determined type: ${finalTradeType}`);
-    }
-    
-    let expirationDate: Date;
-    if (tradeData.expiration && tradeData.expiration.trim() !== '') {
+    const expirationDate = tradeData.expiration ? new Date(tradeData.expiration) : (tradeData.status === "Expired" ? new Date(tradeData.created) : null); // Handle expiration properly
+
+    await db.transaction(async (trx) => {
+        console.log(`[storeDetailedTrade] Starting transaction for detailed trade ID ${tradeData.id}, user ${userId}`);
+
+        // 1. Upsert the main trade data and get its internal DB ID
+        const dbTradePayload = {
+            userId: userId,
+            originalId: String(tradeData.id),
+            tradePartnerId: String(tradeData.user.id), // This is the partner in detailed view's root user object
+            tradePartnerName: tradeData.user.name || "Unknown Partner",
+            tradePartnerDisplayName: tradeData.user.displayName,
+            status: apiStatus,
+            tradeType: finalTradeType,
+            created: new Date(tradeData.created),
+            expiration: expirationDate,
+            isActive: tradeData.isActive,
+            rawData: JSON.stringify(tradeData),
+            updatedAt: new Date()
+        };
+
+        let internalTradeDbId: string;
+
         try {
-            expirationDate = new Date(tradeData.expiration);
-            if (isNaN(expirationDate.getTime())) {
-                console.warn(`[storeDetailedTrade] Invalid expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Using created date as fallback.`);
-                expirationDate = new Date(tradeData.created);
+            const existingTrade = await trx.select({ id: trades.id })
+                .from(trades)
+                .where(and(eq(trades.originalId, String(tradeData.id)), eq(trades.userId, userId)))
+                .limit(1);
+
+            if (existingTrade.length > 0) {
+                internalTradeDbId = existingTrade[0].id;
+                await trx.update(trades).set(dbTradePayload).where(eq(trades.id, internalTradeDbId));
+                console.log(`[storeDetailedTrade] Successfully updated main trade data for original ID ${tradeData.id}, DB ID ${internalTradeDbId}`);
+            } else {
+                const [insertedTrade] = await trx.insert(trades).values(dbTradePayload).returning({ id: trades.id });
+                if (!insertedTrade || !insertedTrade.id) throw new Error("Failed to insert trade or retrieve its ID.");
+                internalTradeDbId = insertedTrade.id;
+                console.log(`[storeDetailedTrade] Successfully inserted main trade data for original ID ${tradeData.id}, new DB ID ${internalTradeDbId}`);
             }
-        } catch (e) {
-            console.warn(`[storeDetailedTrade] Error parsing expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Using created date as fallback.`, e);
-            expirationDate = new Date(tradeData.created);
+        } catch (error) {
+            console.error(`[storeDetailedTrade] Error upserting main trade data for ID ${tradeData.id} within transaction:`, error);
+            throw error; 
         }
-    } else {
-        console.log(`[storeDetailedTrade] No expiration date provided or empty for trade ${originalIdStr}. Using created date as fallback.`);
-        expirationDate = new Date(tradeData.created);
-    }
 
-    const partnerIdForDb = String(tradeData.user.id);
-    const partnerNameForDb = tradeData.user.name || "Unknown Partner"; // Fallback for name
-    const partnerDisplayNameForDb = tradeData.user.displayName || null;
-
-    // Prepare payload with DB schema field names
-    const dbTradePayload = {
-        tradePartnerId: partnerIdForDb, // Ensured String
-        tradePartnerName: partnerNameForDb, // Ensured String, with fallback
-        tradePartnerDisplayName: partnerDisplayNameForDb, 
-        status: apiStatus,
-        tradeType: finalTradeType, 
-        created: new Date(tradeData.created),
-        expiration: expirationDate, // Now guaranteed to be a valid Date
-        isActive: tradeData.isActive,
-        rawData: JSON.stringify(tradeData)
-    };
-
-    console.log(`[storeDetailedTrade] Attempting to store/update trade ${originalIdStr}. Payload:`, JSON.stringify(dbTradePayload, null, 2));
-
-    let tradeDbId: string;
-
-    const existingTradeEntry = await db
-        .select({ tradeType: trades.tradeType, id: trades.id }) // Only select what's needed
-        .from(trades)
-        .where(and(eq(trades.originalId, originalIdStr), eq(trades.userId, userId)))
-        .limit(1)
-
-    if (existingTradeEntry.length === 0) {
-        console.log(`[storeDetailedTrade] Inserting new trade ${originalIdStr} with type: ${finalTradeType}`);
-        const [insertResult] = await db
-            .insert(trades)
-            .values({
-                userId: userId, 
-                originalId: originalIdStr,
-                tradePartnerId: dbTradePayload.tradePartnerId,      // Explicitly from dbTradePayload
-                tradePartnerName: dbTradePayload.tradePartnerName,    // Explicitly from dbTradePayload
-                tradePartnerDisplayName: dbTradePayload.tradePartnerDisplayName, // Explicitly from dbTradePayload
-                created: dbTradePayload.created,                  // Explicitly from dbTradePayload
-                expiration: dbTradePayload.expiration,            // Explicitly from dbTradePayload
-                isActive: dbTradePayload.isActive,                // Explicitly from dbTradePayload
-                status: dbTradePayload.status,                    // Explicitly from dbTradePayload
-                tradeType: dbTradePayload.tradeType,              // Explicitly from dbTradePayload
-                rawData: dbTradePayload.rawData,                  // Explicitly from dbTradePayload
-                createdAt: new Date(),  // Explicitly set for insert
-                updatedAt: new Date()   // Explicitly set for insert
-            })
-            .returning({ id: trades.id });
-        if (!insertResult || !insertResult.id) {
-            throw new Error("Failed to insert trade and get ID.")
+        // 2. Delete existing items for this trade (using internalTradeDbId)
+        try {
+            console.log(`[storeDetailedTrade] Deleting existing items for trade DB ID ${internalTradeDbId}`);
+            await trx.delete(tradeItems).where(eq(tradeItems.tradeId, internalTradeDbId));
+            console.log(`[storeDetailedTrade] Successfully deleted existing items for trade DB ID ${internalTradeDbId}`);
+        } catch (error) {
+            console.error(`[storeDetailedTrade] Error deleting existing items for trade DB ID ${internalTradeDbId} within transaction:`, error);
+            throw error; 
         }
-        tradeDbId = insertResult.id;
-    } else {
-        tradeDbId = existingTradeEntry[0].id;
-        console.log(`[storeDetailedTrade] Updating existing trade ${originalIdStr} (DB ID: ${tradeDbId}). Original DB type: ${existingTradeEntry[0].tradeType || 'N/A'}, New type: ${finalTradeType}, Status from API: ${apiStatus}`);
-        await db.update(trades).set({
-            ...dbTradePayload, // Spread the core payload
-            updatedAt: new Date() // Set on update
-        }).where(eq(trades.id, tradeDbId));
-    }
 
-    // Now handle the trade items
-    if (tradeData.offers && Array.isArray(tradeData.offers)) {
-        // Clear existing items for this trade to avoid duplicates
-        await db.delete(tradeItems).where(eq(tradeItems.tradeId, tradeDbId));
+        // 3. Prepare and Insert new trade items
+        const newTradeItemsToInsert: Array<Omit<typeof tradeItems.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>> = [];
+        tradeData.offers?.forEach((offer) => {
+            // Determine offerType: if the offer's user is the authenticated user (userId), it's their offer.
+            let offerTypeForDb: "user_offer" | "partner_offer";
+            if (String(offer.user.id) === userId) {
+                offerTypeForDb = "user_offer";
+            } else {
+                offerTypeForDb = "partner_offer";
+            }
 
-        for (let i = 0; i < tradeData.offers.length; i++) {
-            const offer = tradeData.offers[i];
-            // Corrected offerSide logic:
-            // Roblox API's /v1/trades/{tradeId} response has offers[0] as the authenticated user's offer
-            // and offers[1] (if present) as the trade partner's offer.
-            const offerSide = (String(offer.user.id) === userId) ? "user_offer" : "partner_offer";
-            
-            // If there's only one offer, and it's not the current user, it's likely an inbound trade from that partner's perspective.
-            // However, for storing items, we just care about who owns what in the offer.
-
+            offer.userAssets?.forEach((asset) => {
+                newTradeItemsToInsert.push({
+                    tradeId: internalTradeDbId,
+                    assetId: String(asset.assetId),
+                    assetName: asset.name,
+                    serialNumber: asset.serialNumber,
+                    recentAveragePrice: asset.recentAveragePrice,
+                    offerType: offerTypeForDb,
+                    robuxAmount: 0 // Default for assets
+                });
+            });
             if (offer.robux && offer.robux > 0) {
-                await db.insert(tradeItems).values({
-                    tradeId: tradeDbId, 
-                    assetId: "robux", 
+                newTradeItemsToInsert.push({
+                    tradeId: internalTradeDbId,
+                    assetId: "ROBUX", // Special ID for robux
                     assetName: "Robux",
-                    offerType: offerSide, // user_offer or partner_offer
-                    robuxAmount: offer.robux,
+                    serialNumber: null,
+                    recentAveragePrice: null,
+                    offerType: offerTypeForDb,
+                    robuxAmount: offer.robux
                 });
             }
+        });
 
-            if (offer.userAssets && Array.isArray(offer.userAssets)) {
-                for (const asset of offer.userAssets) {
-                    await db.insert(tradeItems).values({
-                        tradeId: tradeDbId,
-                        assetId: String(asset.assetId),
-                        assetName: asset.name,
-                        serialNumber: asset.serialNumber || null,
-                        recentAveragePrice: asset.recentAveragePrice || null,
-                        offerType: offerSide, // user_offer or partner_offer
-                    });
-                }
+        if (newTradeItemsToInsert.length > 0) {
+            try {
+                console.log(`[storeDetailedTrade] Inserting ${newTradeItemsToInsert.length} new items for trade DB ID ${internalTradeDbId}`);
+                await trx.insert(tradeItems).values(newTradeItemsToInsert);
+                console.log(`[storeDetailedTrade] Successfully inserted new items for trade DB ID ${internalTradeDbId}`);
+            } catch (error) {
+                console.error(`[storeDetailedTrade] Error inserting new items for trade DB ID ${internalTradeDbId} within transaction:`, error);
+                throw error; 
             }
+        } else {
+            console.log(`[storeDetailedTrade] No new items to insert for trade DB ID ${internalTradeDbId}`);
         }
-    }
+        console.log(`[storeDetailedTrade] Transaction committed for detailed trade ID ${tradeData.id}, user ${userId}`);
+    });
 }

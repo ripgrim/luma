@@ -361,7 +361,11 @@ export function HeroSection() {
                     <div className="space-y-6 text-center sm:text-left">{headerContent}</div>
                     <div className="h-10" />
                     <div className="flex justify-center sm:justify-start">
-                        <Button onClick={() => router.push("/dashboard")}>Start Trading</Button>
+                        <Button
+                            onClick={useCallback(() => router.push("/dashboard"), [router])}
+                        >
+                            Start Trading
+                        </Button>
                     </div>
                 </div>
             </div>

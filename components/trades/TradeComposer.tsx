@@ -2,7 +2,7 @@
 
 // Removed unused: import { Cube, MediumStack } from "@/components/icons/icons"
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { RobuxIcon2 } from "@/components/icons/robux-icon" // Path needs to be adjusted if TradeComposer moves
 import { ChevronDown, Plus, TrendingUp, Scale, X as LucideX } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -238,7 +238,7 @@ export default function TradeComposer({ className }: { className?: string }) {
                             {selectedRecipients.map(recipient => (
                                 <div key={recipient.name} className="flex items-center gap-1.5 rounded-full border border-zinc-700 py-0.5 pr-1.5 pl-1 bg-zinc-800">
                                     {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={20} height={20} className="rounded-full" />} */}
-                                    <div className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium text-white", getAvatarColorClass(recipient.name))}>
+                                    <div className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium text-white", useMemo(() => getAvatarColorClass(recipient.name), [recipient.name]))}>
                                         {recipient.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="text-sm text-white">{recipient.name}</div>
@@ -279,7 +279,7 @@ export default function TradeComposer({ className }: { className?: string }) {
                                                         className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-700 cursor-pointer"
                                                     >
                                                         {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={24} height={24} className="rounded-full" />} */}
-                                                        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium text-white", getAvatarColorClass(recipient.name))}>
+                                                        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium text-white", useMemo(() => getAvatarColorClass(recipient.name), [recipient.name]))}>
                                                             {recipient.name.charAt(0).toUpperCase()}
                                                         </div>
                                                         <span className="text-sm text-white">{recipient.name}</span>
@@ -298,7 +298,7 @@ export default function TradeComposer({ className }: { className?: string }) {
                                                         className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-700 cursor-pointer"
                                                     >
                                                         {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={24} height={24} className="rounded-full" />} */}
-                                                        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium text-white", getAvatarColorClass(recipient.name))}>
+                                                        <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium text-white", useMemo(() => getAvatarColorClass(recipient.name), [recipient.name]))}>
                                                             {recipient.name.charAt(0).toUpperCase()}
                                                         </div>
                                                         <span className="text-sm text-white">{recipient.name}</span>
