@@ -8,16 +8,16 @@ const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
 let redisClient: Redis | null = null
 
 try {
-  if (redisUrl && redisToken) {
-    redisClient = new Redis({
-      url: redisUrl,
-      token: redisToken
-    })
-  } else {
-    console.warn("Redis configuration is missing. Some features may not work correctly.")
-  }
+    if (redisUrl && redisToken) {
+        redisClient = new Redis({
+            url: redisUrl,
+            token: redisToken
+        })
+    } else {
+        console.warn("Redis configuration is missing. Some features may not work correctly.")
+    }
 } catch (error) {
-  console.error("Failed to initialize Redis client:", error)
+    console.error("Failed to initialize Redis client:", error)
 }
 
 // Export the Redis client (possibly null if configuration is missing)

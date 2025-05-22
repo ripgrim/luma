@@ -1,14 +1,13 @@
 "use client"
 
-import { ChevronDown, Cube, MediumStack } from "@/components/icons/icons"
+import { ChevronDown } from "@/components/icons/icons"
 import { AnimatePresence, motion } from "framer-motion"
+import { Plus, Scale, TrendingUp } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { RobuxIcon2 } from "../icons/robux-icon"
 import { AITextSequence } from "../ui/ai-text-sequence"
 import { StarSummarizeButton } from "../ui/star-summarize-button"
-import { TextShimmer } from "../ui/text-shimmer"
-import { BadgeDollarSign, Scale, TrendingUp, Plus } from "lucide-react"
 
 export default function TradingComposer() {
     const [showSummary, setShowSummary] = useState(false)
@@ -80,7 +79,7 @@ export default function TradingComposer() {
     }, [showDropdown])
 
     return (
-        <div className="relative px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-18 max-w-7xl mx-auto">
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-18">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -168,9 +167,9 @@ export default function TradingComposer() {
                                 </div>
                                 <div className="text-sm text-white">jonnyblox</div>
                             </div>
-                            <button 
-                                type="button" 
-                                className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-zinc-600 text-zinc-500 hover:border-zinc-400 hover:text-zinc-400 transition-colors"
+                            <button
+                                type="button"
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-zinc-600 border-dashed text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-400"
                                 aria-label="Add another user"
                             >
                                 <Plus className="h-3 w-3" />
@@ -209,7 +208,7 @@ export default function TradingComposer() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap justify-center sm:justify-between items-center gap-4 border-zinc-800/50 border-t p-3">
+                    <div className="flex flex-wrap items-center justify-center gap-4 border-zinc-800/50 border-t p-3 sm:justify-between">
                         <div className="flex items-center gap-2">
                             <div className="relative" ref={dropdownRef}>
                                 <div className="flex items-center justify-start rounded-md bg-white text-black">
@@ -322,10 +321,8 @@ function ItemSlot({
                 className="h-full w-full object-cover p-2"
                 style={{ objectPosition: "center" }}
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-                <p className="truncate text-center text-xs font-medium text-white">
-                    {item.name}
-                </p>
+            <div className="absolute right-0 bottom-0 left-0 bg-black/60 px-2 py-1">
+                <p className="truncate text-center font-medium text-white text-xs">{item.name}</p>
             </div>
         </div>
     )

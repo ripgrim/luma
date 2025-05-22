@@ -1,7 +1,7 @@
 "use client"
 
 import { trpc } from "@/utils/trpc"
-import { SignedIn, SignedOut } from "@daveyplate/better-auth-ui"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 import { CheckCircle2 } from "lucide-react"
 import { Instrument_Serif } from "next/font/google"
 import Image from "next/image"
@@ -12,8 +12,7 @@ import { z } from "zod"
 import { Roblox } from "../logos/logos"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import { InputOTP, InputOTPSlot, InputOTPGroup, InputOTPSeparator } from "../ui/input-otp"
-import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp"
 
 const instrumentSerif = Instrument_Serif({
     variable: "--font-instrument-serif",
@@ -46,10 +45,7 @@ const EmailInput = memo(
 EmailInput.displayName = "EmailInput"
 
 const CodeInput = memo(
-    ({
-        value,
-        onChange
-    }: { value: string; onChange: (newValue: string) => void }) => (
+    ({ value, onChange }: { value: string; onChange: (newValue: string) => void }) => (
         <InputOTP
             maxLength={6}
             placeholder="Enter 6-digit code"
@@ -342,6 +338,8 @@ export function HeroSection() {
         []
     )
 
+    const handleDashboardNavigation = useCallback(() => router.push("/dashboard"), [router]);
+
     return (
         <div className="relative isolate overflow-hidden py-16 md:py-20 lg:py-24">
             <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-16">
@@ -361,7 +359,9 @@ export function HeroSection() {
                     <div className="space-y-6 text-center sm:text-left">{headerContent}</div>
                     <div className="h-10" />
                     <div className="flex justify-center sm:justify-start">
-                        <Button onClick={() => router.push("/dashboard")}>Start Trading</Button>
+                        <Button onClick={handleDashboardNavigation}>
+                            Start Trading
+                        </Button>
                     </div>
                 </div>
             </div>

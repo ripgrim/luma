@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import Link from "next/link"; // Import Link for navigation
+import Link from "next/link" // Import Link for navigation
 import { usePathname, useRouter } from "next/navigation"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -17,41 +17,44 @@ import {
 } from "@/components/ui/sidebar"
 
 interface NavItem {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    count?: number;
-    dropdown?: boolean; // Added dropdown flag
-    items?: NavItem[];
+    title: string
+    url: string
+    icon?: LucideIcon
+    isActive?: boolean
+    count?: number
+    dropdown?: boolean // Added dropdown flag
+    items?: NavItem[]
 }
 
 export function NavMain({
     items,
     groupTitle
 }: {
-    items: NavItem[];
-    groupTitle: string;
+    items: NavItem[]
+    groupTitle: string
 }) {
     const router = useRouter() // Keep for imperative routing if needed elsewhere
     const pathname = usePathname()
 
     const checkActive = (itemUrl: string, subItems?: NavItem[]) => {
-        if (pathname === itemUrl) return true;
+        if (pathname === itemUrl) return true
         if (subItems) {
-            return subItems.some(subItem => pathname === subItem.url);
+            return subItems.some((subItem) => pathname === subItem.url)
         }
-        return false;
-    };
+        return false
+    }
 
     return (
         <SidebarGroup>
-            <SidebarGroupLabel className="text-neutral-500 dark:text-neutral-400 uppercase text-xs font-medium tracking-wider mt-3 mb-1.5 px-3">
+            <SidebarGroupLabel className="mt-3 mb-1.5 px-3 font-medium text-neutral-500 text-xs uppercase tracking-wider dark:text-neutral-400">
                 {groupTitle}
             </SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => {
-                    const isActive = item.isActive !== undefined ? item.isActive : checkActive(item.url, item.items);
+                    const isActive =
+                        item.isActive !== undefined
+                            ? item.isActive
+                            : checkActive(item.url, item.items)
 
                     if (item.dropdown && item.items && item.items.length > 0) {
                         // Render as Collapsible Dropdown
@@ -64,18 +67,23 @@ export function NavMain({
                             >
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton 
+                                        <SidebarMenuButton
                                             isActive={isActive} // Highlight trigger if section is active
-                                            className="text-sm h-8 flex items-center px-3 py-1.5 w-full"
+                                            className="flex h-8 w-full items-center px-3 py-1.5 text-sm"
                                         >
-                                            {item.icon && <item.icon size={16} className="mr-2 shrink-0" />}
-                                            <span className="truncate grow">{item.title}</span>
+                                            {item.icon && (
+                                                <item.icon size={16} className="mr-2 shrink-0" />
+                                            )}
+                                            <span className="grow truncate">{item.title}</span>
                                             {item.count !== undefined && (
-                                                <span className="ml-auto mr-2 text-xs text-neutral-500 dark:text-neutral-400">
+                                                <span className="mr-2 ml-auto text-neutral-500 text-xs dark:text-neutral-400">
                                                     {item.count.toLocaleString()}
                                                 </span>
                                             )}
-                                            <ChevronRight size={16} className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                            <ChevronRight
+                                                size={16}
+                                                className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                                            />
                                         </SidebarMenuButton>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent>
@@ -85,14 +93,16 @@ export function NavMain({
                                                     <SidebarMenuSubButton
                                                         asChild
                                                         isActive={pathname === subItem.url}
-                                                        className="text-xs h-7"
+                                                        className="h-7 text-xs"
                                                     >
                                                         <Link href={subItem.url}>
                                                             {/* Sub item icon if any, or indent styling */}
-                                                            {/* <span className=\"w-4 mr-2 shrink-0\"></span> Placeholder for indent or sub-icon */} 
-                                                            <span className="truncate grow">{subItem.title}</span>
+                                                            {/* <span className=\"w-4 mr-2 shrink-0\"></span> Placeholder for indent or sub-icon */}
+                                                            <span className="grow truncate">
+                                                                {subItem.title}
+                                                            </span>
                                                             {subItem.count !== undefined && (
-                                                                <span className="ml-auto text-xs text-neutral-500 dark:text-neutral-400">
+                                                                <span className="ml-auto text-neutral-500 text-xs dark:text-neutral-400">
                                                                     {subItem.count.toLocaleString()}
                                                                 </span>
                                                             )}
@@ -104,7 +114,7 @@ export function NavMain({
                                     </CollapsibleContent>
                                 </SidebarMenuItem>
                             </Collapsible>
-                        );
+                        )
                     } else {
                         // Render as Direct Link Item
                         return (
@@ -112,20 +122,22 @@ export function NavMain({
                                 <SidebarMenuButton
                                     asChild
                                     isActive={isActive}
-                                    className="text-sm h-8 flex items-center px-3 py-1.5 w-full"
+                                    className="flex h-8 w-full items-center px-3 py-1.5 text-sm"
                                 >
                                     <Link href={item.url}>
-                                        {item.icon && <item.icon size={16} className="mr-2 shrink-0" />}
-                                        <span className="truncate grow">{item.title}</span>
+                                        {item.icon && (
+                                            <item.icon size={16} className="mr-2 shrink-0" />
+                                        )}
+                                        <span className="grow truncate">{item.title}</span>
                                         {item.count !== undefined && (
-                                            <span className="ml-auto text-xs text-neutral-500 dark:text-neutral-400">
+                                            <span className="ml-auto text-neutral-500 text-xs dark:text-neutral-400">
                                                 {item.count.toLocaleString()}
                                             </span>
                                         )}
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                        );
+                        )
                     }
                 })}
             </SidebarMenu>

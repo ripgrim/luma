@@ -66,19 +66,20 @@ export function RobloxItemsProvider({ children }: { children: ReactNode }) {
                 return thumbnailCache[assetId]
             }
 
-            // Otherwise add it to pending IDs to be fetched
-            if (!pendingIds.has(assetId)) {
-                setPendingIds((prev) => {
-                    const newSet = new Set(prev)
-                    newSet.add(assetId)
-                    return newSet
-                })
-            }
+            // Do NOT trigger a fetch directly from here during render.
+            // The component using this should call preloadItemThumbnails in an effect if needed.
+            // if (!pendingIds.has(assetId)) { // Removed this block
+            //     setPendingIds((prev) => {
+            //         const newSet = new Set(prev);
+            //         newSet.add(assetId);
+            //         return newSet;
+            //     });
+            // }
 
-            // Return null since we don't have it yet
+            // Return null since we don't have it yet or it's pending
             return null
         },
-        [thumbnailCache, pendingIds]
+        [thumbnailCache] // Removed pendingIds from dependency array as it no longer uses setPendingIds
     )
 
     // Preload multiple thumbnails

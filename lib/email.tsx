@@ -3,9 +3,7 @@ import { Resend } from "resend"
 
 // Initialize Resend with API key (with error handling)
 const resendApiKey = process.env.RESEND_API_KEY
-const resend = resendApiKey 
-  ? new Resend(resendApiKey) 
-  : null
+const resend = resendApiKey ? new Resend(resendApiKey) : null
 
 // Generate a random 6-digit code
 export function generateVerificationCode(): string {

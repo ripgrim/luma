@@ -80,7 +80,7 @@ export const earlyAccessRouter = router({
                 let ratelimitInfo = { success: true, limit: 0, reset: 0, remaining: 0 }
                 if (ratelimit) {
                     ratelimitInfo = await ratelimit.limit(ipAddress)
-                    
+
                     // Uncomment to enforce rate limiting
                     // if (!ratelimitInfo.success) {
                     //   throw new TRPCError({
@@ -244,7 +244,7 @@ export const earlyAccessRouter = router({
             // Apply rate limiting for resending codes (if Redis is available)
             let rateLimitSuccess = true
             const ipAddress = getClientIp(ctx.req)
-            
+
             if (redis) {
                 try {
                     const resendLimit = new Ratelimit({
