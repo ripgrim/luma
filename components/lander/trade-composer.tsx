@@ -78,7 +78,7 @@ export default function TradingComposer() {
     }, [showDropdown])
 
     return (
-        <div className="relative mt-40 mb-20">
+        <div className="relative px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24 max-w-7xl mx-auto">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -200,7 +200,7 @@ export default function TradingComposer() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between border-zinc-800/50 border-t p-3">
+                    <div className="flex flex-wrap justify-center sm:justify-between items-center gap-4 border-zinc-800/50 border-t p-3">
                         <div className="flex items-center gap-2">
                             <div className="relative" ref={dropdownRef}>
                                 <div className="flex items-center justify-start rounded-md bg-white text-black">

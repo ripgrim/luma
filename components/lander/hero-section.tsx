@@ -332,7 +332,7 @@ export function HeroSection() {
     )
 
     return (
-        <div className="relative isolate mt-32 mb-auto overflow-hidden pt-0 pb-8 sm:pb-10 lg:pt-64">
+        <div className="relative isolate overflow-hidden py-16 md:py-20 lg:py-24">
             <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-16">
                 <div className="mx-auto mb-6 flex w-fit items-center justify-center gap-4 rounded-full border border-[#2A2A2A] border-input/50 bg-[#1E1E1E] px-4 py-1 md:mx-0 md:justify-start">
                     <span className="flex items-center gap-2 text-sm">

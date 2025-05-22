@@ -48,7 +48,7 @@ export function CoolBento() {
     return (
         <div
             ref={sectionRef}
-            className="relative mx-auto mt-52 mb-32 flex max-w-[1200px] flex-col items-center justify-center"
+            className="relative mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24"
         >
             <motion.div
                 initial="hidden"
@@ -71,8 +71,8 @@ export function CoolBento() {
                     animate={isInView ? "visible" : "hidden"}
                     variants={cardControls}
                 >
-                    <div className="relative h-96 w-96 overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-0 h-96 w-96 rounded-2xl bg-[#2B2B2B]" />
+                    <div className="relative w-full aspect-square max-w-md mx-auto overflow-hidden rounded-2xl">
+                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-[#2B2B2B]" />
                         <div className="absolute top-[34px] left-[34px] inline-flex w-[600px] flex-col items-start justify-start overflow-hidden rounded-xl bg-[#1A1A1A]">
                             <div className="inline-flex h-12 items-center justify-center gap-3 self-stretch overflow-hidden border-tokens-stroke-light/5 border-b-[0.50px] bg-tokens-surface-secondary px-4 py-3">
                                 <div className="flex h-6 items-center justify-center overflow-hidden rounded bg-[#262626] pr-1.5 pl-1">
@@ -254,8 +254,8 @@ export function CoolBento() {
                     variants={cardControls}
                     className="flex flex-col"
                 >
-                    <div className="relative h-96 w-96 overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-0 h-96 w-96 rounded-2xl bg-[#2B2B2B]" />
+                    <div className="relative w-full aspect-square max-w-md mx-auto overflow-hidden rounded-2xl">
+                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-[#2B2B2B]" />
                         <h1 className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 font-bold font-mono text-7xl text-white">
                             ?
                         </h1>
@@ -276,8 +276,8 @@ export function CoolBento() {
                     animate={isInView ? "visible" : "hidden"}
                     variants={cardControls}
                 >
-                    <div className="relative h-96 w-96 overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-0 h-96 w-96 rounded-2xl bg-[#2B2B2B]" />
+                    <div className="relative w-full aspect-square max-w-md mx-auto overflow-hidden rounded-2xl">
+                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-[#2B2B2B]" />
                         <h1 className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 font-bold font-mono text-7xl text-white">
                             ?
                         </h1>
