@@ -12,7 +12,7 @@ export default function LandingPage() {
             <EarlyAccessProvider>
                 <HeroSection />
             </EarlyAccessProvider>
-            <Divider className="my-12 md:my-16" />
+            <Divider className="my-10 md:my-10" />
             <TradeComposer />
             <CoolBento />
             {/* <CoolList />
