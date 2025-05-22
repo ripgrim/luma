@@ -178,11 +178,11 @@ export default function TradeComposer({ className }: { className?: string }) {
 
     const filteredRecipients = recipientSearch
         ? allRecipientsData.filter(
-              (r) =>
-                  r.name.toLowerCase().includes(recipientSearch.toLowerCase()) &&
-                  !selectedRecipients.find((sr) => sr.name === r.name) &&
-                  !knownContactsData.find((kc) => kc.name === r.name) // Exclude known contacts from general results if they are already listed
-          )
+            (r) =>
+                r.name.toLowerCase().includes(recipientSearch.toLowerCase()) &&
+                !selectedRecipients.find((sr) => sr.name === r.name) &&
+                !knownContactsData.find((kc) => kc.name === r.name) // Exclude known contacts from general results if they are already listed
+        )
         : []
 
     const displayedKnownContacts = knownContactsData.filter(
@@ -244,14 +244,10 @@ export default function TradeComposer({ className }: { className?: string }) {
                                     key={recipient.name}
                                     className="flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 py-0.5 pr-1.5 pl-1"
                                 >
-                                    {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={20} height={20} className="rounded-full" />} */}
                                     <div
                                         className={cn(
                                             "flex h-5 w-5 items-center justify-center rounded-full font-medium text-[10px] text-white",
-                                            useMemo(
-                                                () => getAvatarColorClass(recipient.name),
-                                                [recipient.name]
-                                            )
+                                            getAvatarColorClass(recipient.name)
                                         )}
                                     >
                                         {recipient.name.charAt(0).toUpperCase()}
@@ -309,17 +305,10 @@ export default function TradeComposer({ className }: { className?: string }) {
                                                             }
                                                             className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-zinc-700"
                                                         >
-                                                            {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={24} height={24} className="rounded-full" />} */}
                                                             <div
                                                                 className={cn(
                                                                     "flex h-6 w-6 items-center justify-center rounded-full font-medium text-white text-xs",
-                                                                    useMemo(
-                                                                        () =>
-                                                                            getAvatarColorClass(
-                                                                                recipient.name
-                                                                            ),
-                                                                        [recipient.name]
-                                                                    )
+                                                                    getAvatarColorClass(recipient.name)
                                                                 )}
                                                             >
                                                                 {recipient.name
@@ -349,17 +338,10 @@ export default function TradeComposer({ className }: { className?: string }) {
                                                             }
                                                             className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-zinc-700"
                                                         >
-                                                            {/* {recipient.image && <Image src={recipient.image} alt={recipient.name} width={24} height={24} className="rounded-full" />} */}
                                                             <div
                                                                 className={cn(
                                                                     "flex h-6 w-6 items-center justify-center rounded-full font-medium text-white text-xs",
-                                                                    useMemo(
-                                                                        () =>
-                                                                            getAvatarColorClass(
-                                                                                recipient.name
-                                                                            ),
-                                                                        [recipient.name]
-                                                                    )
+                                                                    getAvatarColorClass(recipient.name)
                                                                 )}
                                                             >
                                                                 {recipient.name

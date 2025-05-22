@@ -37,19 +37,20 @@ async function fetchAndStoreRobloxTrades(
     )
     try {
         const roblosecurityToken = await getRoblosecurityTokenForUser(userId, db)
-        console.log(
-            `[fetchAndStoreRobloxTrades] Using Roblosecurity Token (first 20 chars): ${roblosecurityToken.substring(0, 20)}... for user: ${userId}`
-        )
 
         const tradeStatusPathPart = mapTradeType(tradeStatusType)
         let url = `https://trades.roblox.com/v1/trades/${tradeStatusPathPart}?limit=${limit}&sortOrder=${sortOrder}`
         if (initialCursor) {
             url += `&cursor=${initialCursor}`
         }
-
-        console.log(`[fetchAndStoreRobloxTrades] Fetching URL: ${url} for user: ${userId}`)
-        const headers = await getRobloxHeaders(roblosecurityToken)
-        const response = await fetch(url, { method: "GET", headers })
+        // Intentionally avoid logging the cookie value
+        console.log(`[fetchAndStoreRobloxTrades] Using Roblosecurity token for user: ${userId}`)
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                Cookie: `ROBLOSECURITY=${roblosecurityToken}`
+            }
+        })
 
         console.log(
             `[fetchAndStoreRobloxTrades] Roblox API Response Status: ${response.status} for user: ${userId}`
@@ -682,16 +683,16 @@ async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof deta
     else
         finalTradeType =
             tradeData.offers &&
-            tradeData.offers.length > 0 &&
-            String(tradeData.offers[0].user.id) === userId
+                tradeData.offers.length > 0 &&
+                String(tradeData.offers[0].user.id) === userId
                 ? "outbound"
                 : "inbound"
 
     const expirationDate = tradeData.expiration
         ? new Date(tradeData.expiration)
         : tradeData.status === "Expired"
-          ? new Date(tradeData.created)
-          : null // Handle expiration properly
+            ? new Date(tradeData.created)
+            : null // Handle expiration properly
 
     await db.transaction(async (trx) => {
         console.log(

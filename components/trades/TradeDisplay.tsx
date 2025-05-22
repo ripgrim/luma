@@ -308,10 +308,18 @@ export function TradeDisplay({
 
 function TradeItemCard({ item }: { item: TradeItem }) {
     // Use our RobloxItemsContext to get the thumbnail
-    const { getItemThumbnailUrl } = useRobloxItemsContext()
+    const { getItemThumbnailUrl, preloadItemThumbnails } = useRobloxItemsContext()
 
-    // Get thumbnail from the context
+    // Get thumbnail from the context (this is now just a cache lookup)
     const thumbnailUrl = getItemThumbnailUrl(item.assetId)
+
+    // Effect to request the thumbnail if it's not in cache
+    useEffect(() => {
+        if (!thumbnailUrl && item.assetId) {
+            // console.log(`[TradeItemCard] Thumbnail for ${item.assetId} not found in cache, preloading.`);
+            preloadItemThumbnails([item.assetId])
+        }
+    }, [item.assetId, thumbnailUrl, preloadItemThumbnails]) // Dependencies
 
     // Default fallback URL until our thumbnail loads
     const fallbackUrl = `https://www.roblox.com/asset-thumbnail/image?assetId=${item.assetId}&width=420&height=420&format=png`
