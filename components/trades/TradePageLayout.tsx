@@ -1,5 +1,6 @@
 "use client"
 
+import { TradePageSkeleton } from "@/components/skeletons/trade/TradePageSkeleton"
 import { TradeCard } from "@/components/trades/TradeCard"
 import { TradeDisplay } from "@/components/trades/TradeDisplay"
 import { TradeEmptyState } from "@/components/trades/TradeEmptyState"
@@ -13,7 +14,6 @@ import { trpc } from "@/utils/trpc"
 import { Loader2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Drawer } from "vaul"
-import { TradePageSkeleton } from "@/components/skeletons/trade/TradePageSkeleton"
 
 interface Trade {
     id: string
@@ -123,19 +123,22 @@ function TradePageContent({
         [tradeType, utils]
     )
 
-    const { isLoading: isQueryLoading, data: queryData, isFetching: isQueryFetching } =
-        trpc.robloxTrades.getStoredTrades.useQuery(
-            {
-                tradeType,
-                limit: PAGE_SIZE
-            },
-            {
-                enabled: isClient,
-                trpc: { context: { skipBatch: true } },
-                refetchOnMount: true,
-                refetchOnReconnect: true,
-            }
-        )
+    const {
+        isLoading: isQueryLoading,
+        data: queryData,
+        isFetching: isQueryFetching
+    } = trpc.robloxTrades.getStoredTrades.useQuery(
+        {
+            tradeType,
+            limit: PAGE_SIZE
+        },
+        {
+            enabled: isClient,
+            trpc: { context: { skipBatch: true } },
+            refetchOnMount: true,
+            refetchOnReconnect: true
+        }
+    )
 
     useEffect(() => {
         if (pendingType && tradeType === pendingType && !isQueryFetching && queryData) {
@@ -147,10 +150,7 @@ function TradePageContent({
         if (queryData?.trades) {
             setTrades(queryData.trades)
             setNextCursor(queryData.nextCursor)
-            setHasMore(
-                queryData.nextCursor !== null ||
-                queryData.trades.length >= PAGE_SIZE
-            )
+            setHasMore(queryData.nextCursor !== null || queryData.trades.length >= PAGE_SIZE)
             const partnerIds = queryData.trades.map((trade) => trade.tradePartnerId).filter(Boolean)
             if (partnerIds.length > 0) {
                 setTimeout(() => queueAvatarLoading(partnerIds, true), 0)
@@ -460,11 +460,12 @@ function TradePageContent({
     }, [selectedTrade?.id, selectedTrade?.originalId, utils.robloxTrades.getTradeDetails])
 
     // Determine if the current queryData (if it exists) has actual trade entries
-    const hasLoadedTradesInQueryData = !!(queryData?.trades && queryData.trades.length > 0);
+    const hasLoadedTradesInQueryData = !!(queryData?.trades && queryData.trades.length > 0)
 
-    const showLoadingState = !isClient ||
-                           pendingType ||
-                           (isQueryLoading && trades.length === 0 && !hasLoadedTradesInQueryData);
+    const showLoadingState =
+        !isClient ||
+        pendingType ||
+        (isQueryLoading && trades.length === 0 && !hasLoadedTradesInQueryData)
 
     if (showLoadingState) {
         return (
@@ -474,11 +475,11 @@ function TradePageContent({
                         <div className="mb-6 flex justify-center">
                             <TradeSwitcher onTypeChange={handleTradeTypeChange} />
                         </div>
-                        <TradePageSkeleton /> 
+                        <TradePageSkeleton />
                     </main>
                 </div>
             </div>
-        );
+        )
     }
 
     // Empty state - no trades found

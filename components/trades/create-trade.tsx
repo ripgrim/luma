@@ -1,10 +1,9 @@
-"use client";
+"use client"
 
-import { X } from '@/components/icons/icons';
-import TradeComposer from '@/components/trades/TradeComposer';
+import { X } from "@/components/icons/icons"
+import TradeComposer from "@/components/trades/TradeComposer"
 
 export default function CreateTrade() {
-
     return (
         <>
             <div className="flex min-h-screen flex-col items-center justify-center gap-1 p-4 md:p-0">
@@ -15,11 +14,13 @@ export default function CreateTrade() {
                         aria-label="Close trade composer"
                     >
                         <X className="mt-0.5 h-3.5 w-3.5 fill-[#6D6D6D] dark:fill-[#929292]" />
-                        <span className="text-sm font-medium text-[#6D6D6D] dark:text-white">esc</span>
+                        <span className="font-medium text-[#6D6D6D] text-sm dark:text-white">
+                            esc
+                        </span>
                     </button>
                 </div>
                 <TradeComposer />
             </div>
         </>
-    );
+    )
 }

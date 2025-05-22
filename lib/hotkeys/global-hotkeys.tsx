@@ -3,13 +3,13 @@
 import { useSidebar } from "@/components/ui/sidebar"
 import { keyboardShortcuts } from "@/config/shortcuts"
 import { useRouter } from "next/navigation"
-import { useShortcuts } from "./use-hotkey-utils"
 import { useQueryState } from "nuqs"
+import { useShortcuts } from "./use-hotkey-utils"
 
 export function GlobalHotkeys() {
     const router = useRouter()
     const sidebarControls = useSidebar()
-    const [tradeComposerOpen, setTradeComposerOpen] = useQueryState('isTradeComposerOpen');
+    const [tradeComposerOpen, setTradeComposerOpen] = useQueryState("isTradeComposerOpen")
 
     if (sidebarControls && sidebarControls.open !== undefined) {
         console.log(
@@ -58,7 +58,7 @@ export function GlobalHotkeys() {
                 )
             }
         },
-        openTradeComposer: () => setTradeComposerOpen('true')
+        openTradeComposer: () => setTradeComposerOpen("true")
     }
 
     const activeShortcuts = keyboardShortcuts.filter(

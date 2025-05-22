@@ -37,9 +37,7 @@ export default function DashboardPage() {
 
                     <div className="w-full rounded-xl bg-[#181818] p-4 pb-8 shadow-inner">
                         <div className="relative h-full w-full">
-                            <div
-                                className="h-full w-full"
-                            >
+                            <div className="h-full w-full">
                                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
                                     <ClippedCard
                                         icon={<RobuxIcon />}

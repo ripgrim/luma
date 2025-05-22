@@ -98,7 +98,9 @@ export function NavUser({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
                             <LogOut />
-                            <Button variant="ghost" onClick={() => signOut()}>Log out</Button>
+                            <Button variant="ghost" onClick={() => signOut()}>
+                                Log out
+                            </Button>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
