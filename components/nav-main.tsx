@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
+import Link from "next/link"; // Import Link for navigation
 import { usePathname, useRouter } from "next/navigation"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -15,72 +16,118 @@ import {
     SidebarMenuSubItem
 } from "@/components/ui/sidebar"
 
+interface NavItem {
+    title: string;
+    url: string;
+    icon?: LucideIcon;
+    isActive?: boolean;
+    count?: number;
+    dropdown?: boolean; // Added dropdown flag
+    items?: NavItem[];
+}
+
 export function NavMain({
-    items
+    items,
+    groupTitle
 }: {
-    items: {
-        title: string
-        url: string
-        icon?: LucideIcon
-        isActive?: boolean
-        items?: {
-            title: string
-            url: string
-        }[]
-    }[]
+    items: NavItem[];
+    groupTitle: string;
 }) {
-    const router = useRouter()
+    const router = useRouter() // Keep for imperative routing if needed elsewhere
     const pathname = usePathname()
+
+    const checkActive = (itemUrl: string, subItems?: NavItem[]) => {
+        if (pathname === itemUrl) return true;
+        if (subItems) {
+            return subItems.some(subItem => pathname === subItem.url);
+        }
+        return false;
+    };
+
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-neutral-500 dark:text-neutral-400 uppercase text-xs font-medium tracking-wider mt-3 mb-1.5 px-3">
+                {groupTitle}
+            </SidebarGroupLabel>
             <SidebarMenu>
-                {items.map((item) => (
-                    <Collapsible
-                        key={item.title}
-                        asChild
-                        defaultOpen={item.isActive}
-                        className="group/collapsible"
-                    >
-                        <SidebarMenuItem>
-                            <CollapsibleTrigger asChild>
-                                <SidebarMenuButton tooltip={item.title}>
-                                    {item.icon && <item.icon />}
-                                    <span>{item.title}</span>
-                                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                {items.map((item) => {
+                    const isActive = item.isActive !== undefined ? item.isActive : checkActive(item.url, item.items);
+
+                    if (item.dropdown && item.items && item.items.length > 0) {
+                        // Render as Collapsible Dropdown
+                        return (
+                            <Collapsible
+                                key={item.title}
+                                asChild
+                                defaultOpen={isActive} // Open if parent or any child is active
+                                className="group/collapsible"
+                            >
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton 
+                                            isActive={isActive} // Highlight trigger if section is active
+                                            className="text-sm h-8 flex items-center px-3 py-1.5 w-full"
+                                        >
+                                            {item.icon && <item.icon size={16} className="mr-2 shrink-0" />}
+                                            <span className="truncate grow">{item.title}</span>
+                                            {item.count !== undefined && (
+                                                <span className="ml-auto mr-2 text-xs text-neutral-500 dark:text-neutral-400">
+                                                    {item.count.toLocaleString()}
+                                                </span>
+                                            )}
+                                            <ChevronRight size={16} className="ml-auto shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            {item.items.map((subItem) => (
+                                                <SidebarMenuSubItem key={subItem.title}>
+                                                    <SidebarMenuSubButton
+                                                        asChild
+                                                        isActive={pathname === subItem.url}
+                                                        className="text-xs h-7"
+                                                    >
+                                                        <Link href={subItem.url}>
+                                                            {/* Sub item icon if any, or indent styling */}
+                                                            {/* <span className=\"w-4 mr-2 shrink-0\"></span> Placeholder for indent or sub-icon */} 
+                                                            <span className="truncate grow">{subItem.title}</span>
+                                                            {subItem.count !== undefined && (
+                                                                <span className="ml-auto text-xs text-neutral-500 dark:text-neutral-400">
+                                                                    {subItem.count.toLocaleString()}
+                                                                </span>
+                                                            )}
+                                                        </Link>
+                                                    </SidebarMenuSubButton>
+                                                </SidebarMenuSubItem>
+                                            ))}
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
+                        );
+                    } else {
+                        // Render as Direct Link Item
+                        return (
+                            <SidebarMenuItem key={item.title}>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={isActive}
+                                    className="text-sm h-8 flex items-center px-3 py-1.5 w-full"
+                                >
+                                    <Link href={item.url}>
+                                        {item.icon && <item.icon size={16} className="mr-2 shrink-0" />}
+                                        <span className="truncate grow">{item.title}</span>
+                                        {item.count !== undefined && (
+                                            <span className="ml-auto text-xs text-neutral-500 dark:text-neutral-400">
+                                                {item.count.toLocaleString()}
+                                            </span>
+                                        )}
+                                    </Link>
                                 </SidebarMenuButton>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                                <SidebarMenuSub>
-                                    {item.items?.map((subItem) => (
-                                        <SidebarMenuSubItem key={subItem.title}>
-                                            <SidebarMenuSubButton asChild>
-                                                <a
-                                                    href={subItem.url}
-                                                    onClick={(e) => {
-                                                        if (
-                                                            subItem.url.startsWith(
-                                                                "/trades?type="
-                                                            ) &&
-                                                            pathname === "/trades"
-                                                        ) {
-                                                            e.preventDefault()
-                                                            router.push(subItem.url, {
-                                                                scroll: false
-                                                            })
-                                                        }
-                                                    }}
-                                                >
-                                                    <span>{subItem.title}</span>
-                                                </a>
-                                            </SidebarMenuSubButton>
-                                        </SidebarMenuSubItem>
-                                    ))}
-                                </SidebarMenuSub>
-                            </CollapsibleContent>
-                        </SidebarMenuItem>
-                    </Collapsible>
-                ))}
+                            </SidebarMenuItem>
+                        );
+                    }
+                })}
             </SidebarMenu>
         </SidebarGroup>
     )

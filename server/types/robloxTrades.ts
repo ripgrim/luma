@@ -57,7 +57,7 @@ export const detailedTradeSchema = z.object({
     id: z.number().or(z.string()),
     user: userSchema,
     created: z.string(),
-    expiration: z.string().optional(),
+    expiration: z.string().nullable().optional(),
     isActive: z.boolean(),
     status: z.number().or(z.string())
 })

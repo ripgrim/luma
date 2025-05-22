@@ -58,5 +58,12 @@ export const keyboardShortcuts: ReadonlyArray<Shortcut> = [
         keys: ["shift", "alt", "c"],
         scope: "trades",
         description: "Initiate counter trade confirmation"
+    },
+    {
+        id: "openTradeComposer",
+        label: "Open Trade Composer",
+        keys: ["shift", "alt", "n"],
+        scope: "global",
+        description: "Open the trade composer"
     }
 ]

@@ -4,18 +4,20 @@ import { useSidebar } from "@/components/ui/sidebar"
 import { keyboardShortcuts } from "@/config/shortcuts"
 import { useRouter } from "next/navigation"
 import { useShortcuts } from "./use-hotkey-utils"
+import { useQueryState } from "nuqs"
 
 export function GlobalHotkeys() {
     const router = useRouter()
-    let sidebarControls = null
-    try {
-        sidebarControls = useSidebar()
+    const sidebarControls = useSidebar()
+    const [tradeComposerOpen, setTradeComposerOpen] = useQueryState('isTradeComposerOpen');
+
+    if (sidebarControls && sidebarControls.open !== undefined) {
         console.log(
             `[GlobalHotkeys] Initializing for scope: global. Sidebar context found. Sidebar open: ${sidebarControls.open}`
         )
-    } catch (error) {
+    } else {
         console.log(
-            "[GlobalHotkeys] Initializing for scope: global. Sidebar context NOT found. Sidebar hotkeys will log warnings if used."
+            "[GlobalHotkeys] Initializing for scope: global. Sidebar context potentially NOT found or not providing expected shape. Sidebar hotkeys might log warnings if used."
         )
     }
 
@@ -55,19 +57,23 @@ export function GlobalHotkeys() {
                     "[GlobalHotkeys] collapseSidebar hotkey triggered, but toggleSidebar function is not available. Is SidebarProvider an ancestor and context found?"
                 )
             }
-        }
+        },
+        openTradeComposer: () => setTradeComposerOpen('true')
     }
 
     const activeShortcuts = keyboardShortcuts.filter(
         (shortcut) => shortcut.scope === scope && handlers.hasOwnProperty(shortcut.id)
     )
 
+    useShortcuts(activeShortcuts, handlers, {
+        scopes: scope,
+        stopPropagation: true
+    })
+
     if (activeShortcuts.length > 0) {
         console.log("[GlobalHotkeys] Active shortcuts being registered:", activeShortcuts)
-        useShortcuts(activeShortcuts, handlers, {
-            scopes: scope,
-            stopPropagation: true
-        })
+    } else {
+        console.log("[GlobalHotkeys] No active shortcuts for this scope.")
     }
 
     return null

@@ -636,86 +636,92 @@ async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof deta
     console.log(`[storeDetailedTrade] Storing detailed trade ID ${tradeData.id} for user ${userId}`)
     const originalIdStr = String(tradeData.id)
 
-    const existingTradeEntry = await db
-        .select({ tradeType: trades.tradeType, id: trades.id })
-        .from(trades)
-        .where(and(eq(trades.originalId, originalIdStr), eq(trades.userId, userId)))
-        .limit(1)
-
-    let currentTradeTypeInDb: string;
-    if (existingTradeEntry.length > 0 && existingTradeEntry[0].tradeType) {
-        currentTradeTypeInDb = existingTradeEntry[0].tradeType;
-        console.log(`[storeDetailedTrade] Found existing trade ${originalIdStr} in DB with tradeType: ${currentTradeTypeInDb}`)
-    } else {
-        // Infer initial type if not in DB or tradeType is somehow null (though schema says notNull)
-        // tradeData.user is the initiator of the trade
-        if (String(tradeData.user.id) === userId) {
-            currentTradeTypeInDb = "Outbound"; // Current user initiated this trade
-        } else {
-            currentTradeTypeInDb = "Inbound";  // Someone else initiated this trade with current user
-        }
-        console.log(`[storeDetailedTrade] No existing trade ${originalIdStr} in DB or tradeType was null/empty. Inferred initial type: ${currentTradeTypeInDb}`);
-    }
-
-    let finalTradeType = currentTradeTypeInDb;
+    // Determine tradeType based on existing logic or sensible defaults
+    // This section reverts to a structure closer to what might have been before,
+    // focusing on using tradeData.user for partner info and tradeData.status for type.
+    let finalTradeType: string;
     const apiStatus = mapTradeStatus(tradeData.status);
 
+    // Simplified trade type determination logic (closer to original intent)
     if (apiStatus === "Completed") {
-        finalTradeType = "completed"
+        finalTradeType = "completed";
     } else if (["Expired", "Declined", "Inactive", "Cancelled"].includes(apiStatus)) {
-        finalTradeType = "inactive"
-    } else if (apiStatus === "Open" || apiStatus === "Pending") {
-        // For active statuses, preserve the determined currentTradeTypeInDb.
-        // This correctly keeps "Outbound" if it was an outbound trade that's still open/pending.
-        finalTradeType = currentTradeTypeInDb; 
-        console.log(`[storeDetailedTrade] Trade ${originalIdStr} is ${apiStatus}. Preserving/Using determined type: ${finalTradeType}`);
-    } else { // E.g. apiStatus is "Unknown"
-        console.warn(`[storeDetailedTrade] Unknown API status '${apiStatus}' for trade ${originalIdStr}. Using determined type: ${finalTradeType}`)
+        finalTradeType = "inactive";
+    } else { // "Open", "Pending", or other active states
+        // Infer based on who the tradeData.user is. If it's the authenticated user, it's an Outbound from their perspective of initiating.
+        // If tradeData.user is the *other* party, it's Inbound.
+        // Roblox API's /v1/trades/{tradeId} endpoint, the 'user' object in the root is the trade partner.
+        // The authenticated user's details are usually in offers[0].user.id
+        if (tradeData.offers && tradeData.offers.length > 0 && String(tradeData.offers[0].user.id) === userId) {
+            finalTradeType = "outbound";
+        } else {
+            finalTradeType = "inbound"; // Default or if offer[0] is not the current user
+        }
+        console.log(`[storeDetailedTrade] Trade ${originalIdStr} is ${apiStatus}. Determined type: ${finalTradeType}`);
     }
     
-    let expirationDate: Date | null = null;
-    if (tradeData.expiration) {
+    let expirationDate: Date;
+    if (tradeData.expiration && tradeData.expiration.trim() !== '') {
         try {
             expirationDate = new Date(tradeData.expiration);
             if (isNaN(expirationDate.getTime())) {
-                console.warn(`[storeDetailedTrade] Invalid expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Setting to null.`);
-                expirationDate = null;
+                console.warn(`[storeDetailedTrade] Invalid expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Using created date as fallback.`);
+                expirationDate = new Date(tradeData.created);
             }
         } catch (e) {
-            console.warn(`[storeDetailedTrade] Error parsing expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Setting to null.`, e);
-            expirationDate = null;
+            console.warn(`[storeDetailedTrade] Error parsing expiration date for trade ${originalIdStr}: ${tradeData.expiration}. Using created date as fallback.`, e);
+            expirationDate = new Date(tradeData.created);
         }
     } else {
-        console.log(`[storeDetailedTrade] No expiration date provided for trade ${originalIdStr}. Setting to null.`);
+        console.log(`[storeDetailedTrade] No expiration date provided or empty for trade ${originalIdStr}. Using created date as fallback.`);
+        expirationDate = new Date(tradeData.created);
     }
+
+    const partnerIdForDb = String(tradeData.user.id);
+    const partnerNameForDb = tradeData.user.name || "Unknown Partner"; // Fallback for name
+    const partnerDisplayNameForDb = tradeData.user.displayName || null;
 
     // Prepare payload with DB schema field names
     const dbTradePayload = {
-        tradePartnerId: String(tradeData.user.id),
-        tradePartnerName: tradeData.user.name,
-        // tradePartnerDisplayName is optional in schema, tradeData.user.displayName is optional
-        tradePartnerDisplayName: tradeData.user.displayName || null,
+        tradePartnerId: partnerIdForDb, // Ensured String
+        tradePartnerName: partnerNameForDb, // Ensured String, with fallback
+        tradePartnerDisplayName: partnerDisplayNameForDb, 
         status: apiStatus,
-        tradeType: finalTradeType, // Now guaranteed to be non-null string
+        tradeType: finalTradeType, 
         created: new Date(tradeData.created),
-        expiration: expirationDate, 
+        expiration: expirationDate, // Now guaranteed to be a valid Date
         isActive: tradeData.isActive,
         rawData: JSON.stringify(tradeData)
-        // originalId and userId are handled in insert/update specifically
     };
 
+    console.log(`[storeDetailedTrade] Attempting to store/update trade ${originalIdStr}. Payload:`, JSON.stringify(dbTradePayload, null, 2));
+
     let tradeDbId: string;
+
+    const existingTradeEntry = await db
+        .select({ tradeType: trades.tradeType, id: trades.id }) // Only select what's needed
+        .from(trades)
+        .where(and(eq(trades.originalId, originalIdStr), eq(trades.userId, userId)))
+        .limit(1)
 
     if (existingTradeEntry.length === 0) {
         console.log(`[storeDetailedTrade] Inserting new trade ${originalIdStr} with type: ${finalTradeType}`);
         const [insertResult] = await db
             .insert(trades)
             .values({
-                ...dbTradePayload,
-                userId: userId,         // Add userId for insert
-                originalId: originalIdStr, // Add originalId for insert
-                createdAt: new Date(),  // Set on insert
-                updatedAt: new Date()   // Set on insert
+                userId: userId, 
+                originalId: originalIdStr,
+                tradePartnerId: dbTradePayload.tradePartnerId,      // Explicitly from dbTradePayload
+                tradePartnerName: dbTradePayload.tradePartnerName,    // Explicitly from dbTradePayload
+                tradePartnerDisplayName: dbTradePayload.tradePartnerDisplayName, // Explicitly from dbTradePayload
+                created: dbTradePayload.created,                  // Explicitly from dbTradePayload
+                expiration: dbTradePayload.expiration,            // Explicitly from dbTradePayload
+                isActive: dbTradePayload.isActive,                // Explicitly from dbTradePayload
+                status: dbTradePayload.status,                    // Explicitly from dbTradePayload
+                tradeType: dbTradePayload.tradeType,              // Explicitly from dbTradePayload
+                rawData: dbTradePayload.rawData,                  // Explicitly from dbTradePayload
+                createdAt: new Date(),  // Explicitly set for insert
+                updatedAt: new Date()   // Explicitly set for insert
             })
             .returning({ id: trades.id });
         if (!insertResult || !insertResult.id) {
@@ -726,7 +732,7 @@ async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof deta
         tradeDbId = existingTradeEntry[0].id;
         console.log(`[storeDetailedTrade] Updating existing trade ${originalIdStr} (DB ID: ${tradeDbId}). Original DB type: ${existingTradeEntry[0].tradeType || 'N/A'}, New type: ${finalTradeType}, Status from API: ${apiStatus}`);
         await db.update(trades).set({
-            ...dbTradePayload,
+            ...dbTradePayload, // Spread the core payload
             updatedAt: new Date() // Set on update
         }).where(eq(trades.id, tradeDbId));
     }
@@ -734,42 +740,37 @@ async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof deta
     // Now handle the trade items
     if (tradeData.offers && Array.isArray(tradeData.offers)) {
         // Clear existing items for this trade to avoid duplicates
-        await db.delete(tradeItems).where(eq(tradeItems.tradeId, tradeDbId)); // Use tradeDbId
+        await db.delete(tradeItems).where(eq(tradeItems.tradeId, tradeDbId));
 
         for (let i = 0; i < tradeData.offers.length; i++) {
             const offer = tradeData.offers[i];
-            const offerType = String(offer.user.id) === userId ? "user_offer" : "partner_offer";
-            // Corrected offerType: Roblox API's offers array:
-            // offers[0] is the authenticated user's offer.
-            // offers[1] is the other user's offer.
-            // My previous logic based on index i was potentially flawed if tradeData.user (initiator) wasn't used.
-            // Let's assume offers[0].user.id is THIS user (userId) IF it's an outbound trade detail,
-            // or if it's an inbound trade where the OTHER party is offers[0].user.
-            // The problem: offers array structure is fixed: offers[0] = you, offers[1] = them.
-
-            const offerSide = i === 0 ? "user_offer" : "partner_offer"; // This is simpler and likely what Roblox intends.
+            // Corrected offerSide logic:
+            // Roblox API's /v1/trades/{tradeId} response has offers[0] as the authenticated user's offer
+            // and offers[1] (if present) as the trade partner's offer.
+            const offerSide = (String(offer.user.id) === userId) ? "user_offer" : "partner_offer";
+            
+            // If there's only one offer, and it's not the current user, it's likely an inbound trade from that partner's perspective.
+            // However, for storing items, we just care about who owns what in the offer.
 
             if (offer.robux && offer.robux > 0) {
                 await db.insert(tradeItems).values({
-                    tradeId: tradeDbId, // Use tradeDbId
+                    tradeId: tradeDbId, 
                     assetId: "robux", 
                     assetName: "Robux",
-                    offerType: offerSide,
+                    offerType: offerSide, // user_offer or partner_offer
                     robuxAmount: offer.robux,
-                    // createdAt and updatedAt have defaultNow()
                 });
             }
 
             if (offer.userAssets && Array.isArray(offer.userAssets)) {
                 for (const asset of offer.userAssets) {
                     await db.insert(tradeItems).values({
-                        tradeId: tradeDbId, // Use tradeDbId
+                        tradeId: tradeDbId,
                         assetId: String(asset.assetId),
                         assetName: asset.name,
                         serialNumber: asset.serialNumber || null,
                         recentAveragePrice: asset.recentAveragePrice || null,
-                        offerType: offerSide,
-                        // createdAt and updatedAt have defaultNow()
+                        offerType: offerSide, // user_offer or partner_offer
                     });
                 }
             }

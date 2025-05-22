@@ -1,6 +1,6 @@
 "use client"
 
-import RobloxAuthCard from "@/app/components/RobloxAuthCard"
+import RobloxAuthCard from "@/components/RobloxAuthCard"
 import { useListAccounts, useSession } from "@/hooks/auth-hooks"
 import { DeleteAccountCard } from "@daveyplate/better-auth-ui"
 
