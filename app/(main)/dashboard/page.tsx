@@ -39,13 +39,6 @@ export default function DashboardPage() {
                         <div className="relative h-full w-full">
                             <div
                                 className="h-full w-full"
-                                style={{
-                                    filter:
-                                        isLoadingCookieStatus || !isRobloCookieVerified
-                                            ? "blur(4px)"
-                                            : "none",
-                                    transition: "filter 0.3s ease-out"
-                                }}
                             >
                                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
                                     <ClippedCard

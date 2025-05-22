@@ -361,29 +361,7 @@ export function HeroSection() {
                     <div className="space-y-6 text-center sm:text-left">{headerContent}</div>
                     <div className="h-10" />
                     <div className="flex justify-center sm:justify-start">
-                        <SignedIn>
-                            <Button onClick={() => router.push("/dashboard")}>Start Trading</Button>
-                        </SignedIn>
-                        <SignedOut>
-                            {isVerified ? (
-                                <VerificationSuccess userExists={userExists} />
-                            ) : isRegistered ? (
-                                <VerificationForm
-                                    code={code}
-                                    onCodeChange={handleCodeChange}
-                                    onSubmit={handleVerification}
-                                    isSubmitting={isSubmitting}
-                                    onResendCode={handleResendCode}
-                                />
-                            ) : (
-                                <EarlyAccessForm
-                                    email={email}
-                                    onEmailChange={handleEmailChange}
-                                    onSubmit={handleEarlyAccess}
-                                    isSubmitting={isSubmitting}
-                                />
-                            )}
-                        </SignedOut>
+                        <Button onClick={() => router.push("/dashboard")}>Start Trading</Button>
                     </div>
                 </div>
             </div>
