@@ -48,7 +48,7 @@ export function CoolBento() {
     return (
         <div
             ref={sectionRef}
-            className="relative mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24"
+            className="relative px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-18 max-w-7xl mx-auto"
         >
             <motion.div
                 initial="hidden"
@@ -255,7 +255,14 @@ export function CoolBento() {
                     className="flex flex-col"
                 >
                     <div className="relative w-full aspect-square max-w-md mx-auto overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-[#2B2B2B]" />
+                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl" />
+                        <Image
+                            src="/composer.jpg"
+                            alt="Trade Composer"
+                            width={1000}
+                            height={1000}
+                            className="w-full h-full object-cover blur-[30px]"
+                        />
                         <h1 className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 font-bold font-mono text-7xl text-white">
                             ?
                         </h1>
@@ -277,7 +284,14 @@ export function CoolBento() {
                     variants={cardControls}
                 >
                     <div className="relative w-full aspect-square max-w-md mx-auto overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl bg-[#2B2B2B]" />
+                        <div className="absolute top-0 left-0 h-full w-full rounded-2xl" />
+                        <Image
+                            src="/composer.jpg"
+                            alt="Trade Composer"
+                            width={1000}
+                            height={1000}
+                            className="w-full h-full object-cover blur-[30px] scale-x-[-1]"
+                        />
                         <h1 className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 font-bold font-mono text-7xl text-white">
                             ?
                         </h1>
