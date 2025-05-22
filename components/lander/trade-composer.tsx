@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react"
 import { RobuxIcon2 } from "../icons/robux-icon"
 import { AITextSequence } from "../ui/ai-text-sequence"
 import { StarSummarizeButton } from "../ui/star-summarize-button"
+import { TextShimmer } from "../ui/text-shimmer"
+import { BadgeDollarSign, Scale, TrendingUp, Plus } from "lucide-react"
 
 export default function TradingComposer() {
     const [showSummary, setShowSummary] = useState(false)
@@ -78,7 +80,7 @@ export default function TradingComposer() {
     }, [showDropdown])
 
     return (
-        <div className="relative px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-24 max-w-7xl mx-auto">
+        <div className="relative px-4 py-16 sm:px-6 md:py-20 lg:px-8 lg:py-18 max-w-7xl mx-auto">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -166,6 +168,13 @@ export default function TradingComposer() {
                                 </div>
                                 <div className="text-sm text-white">jonnyblox</div>
                             </div>
+                            <button 
+                                type="button" 
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-zinc-600 text-zinc-500 hover:border-zinc-400 hover:text-zinc-400 transition-colors"
+                                aria-label="Add another user"
+                            >
+                                <Plus className="h-3 w-3" />
+                            </button>
                         </div>
                     </div>
                     <div className="bg-zinc-900 p-4">
@@ -174,7 +183,7 @@ export default function TradingComposer() {
                                 <div className="mb-2 font-medium text-sm text-zinc-300">
                                     Items you would give:
                                 </div>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="grid grid-cols-4 gap-3">
                                     <ItemSlot item={side1.item1} />
                                     <ItemSlot item={side1.item2} />
                                     <ItemSlot item={side1.item3} />
@@ -190,7 +199,7 @@ export default function TradingComposer() {
                                 <div className="mb-2 font-medium text-sm text-zinc-300">
                                     Items you would receive:
                                 </div>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="grid grid-cols-4 gap-3">
                                     <ItemSlot item={side2.item1} />
                                 </div>
                                 <div className="mt-3 text-right font-semibold text-lg text-white">
@@ -276,12 +285,12 @@ export default function TradingComposer() {
                             </StarSummarizeButton>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button className="flex h-7 items-center gap-1.5 rounded-md bg-zinc-800 px-2 text-sm text-zinc-300">
-                                <Cube className="h-3 w-3 fill-white" />
-                                Fair trade
+                            <button className="flex h-7 items-center gap-1.5 rounded-md bg-red-800/30 px-2 text-sm text-zinc-300">
+                                <Scale className="h-3 w-3 fill-white" />
+                                Unfair trade
                             </button>
                             <button className="flex h-7 items-center gap-1.5 rounded-md bg-zinc-800 px-2 text-sm text-zinc-300">
-                                <MediumStack className="h-3 w-3 fill-white" />
+                                <TrendingUp className="h-3 w-3 fill-white" />
                                 Value-based
                             </button>
                         </div>
@@ -302,17 +311,22 @@ export default function TradingComposer() {
 
 function ItemSlot({
     item
-}: { item: { image: string; name: string; price: number; quantity: number; total: number } }) {
+}: { item: { name: string; image: string; price: number; quantity: number; total: number } }) {
     return (
-        <div className="flex aspect-square items-center justify-center overflow-hidden rounded bg-zinc-800 shadow-inner">
+        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-zinc-800">
             <Image
                 src={item.image}
                 alt={item.name}
                 width={100}
                 height={100}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover p-2"
                 style={{ objectPosition: "center" }}
             />
+            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
+                <p className="truncate text-center text-xs font-medium text-white">
+                    {item.name}
+                </p>
+            </div>
         </div>
     )
 }
