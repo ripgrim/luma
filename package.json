@@ -52,6 +52,7 @@
         "pg": "^8.14.1",
         "posthog-js": "^1.245.0",
         "posthog-node": "^4.17.1",
+        "radix-ui": "^1.4.2",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.56.4",
