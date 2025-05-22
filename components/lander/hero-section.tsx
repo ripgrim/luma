@@ -12,6 +12,8 @@ import { z } from "zod"
 import { Roblox } from "../logos/logos"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
+import { InputOTP, InputOTPSlot, InputOTPGroup, InputOTPSeparator } from "../ui/input-otp"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 
 const instrumentSerif = Instrument_Serif({
     variable: "--font-instrument-serif",
@@ -47,15 +49,24 @@ const CodeInput = memo(
     ({
         value,
         onChange
-    }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-        <Input
-            type="text"
+    }: { value: string; onChange: (newValue: string) => void }) => (
+        <InputOTP
+            maxLength={6}
             placeholder="Enter 6-digit code"
             value={value}
             onChange={onChange}
-            maxLength={6}
-            className="border-white/20 bg-white/10 text-center text-white placeholder-white/40 focus:border-white/30"
-        />
+            className="border-white/20 bg-card text-center text-white placeholder-white/40 focus:border-white/30"
+            pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+        >
+            <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+            </InputOTPGroup>
+        </InputOTP>
     )
 )
 CodeInput.displayName = "CodeInput"
@@ -135,7 +146,7 @@ const VerificationForm = memo(
         onResendCode
     }: {
         code: string
-        onCodeChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+        onCodeChange: (newValue: string) => void
         onSubmit: (e: React.FormEvent) => void
         isSubmitting: boolean
         onResendCode: () => void
@@ -203,8 +214,8 @@ export function HeroSection() {
         setEmail(e.target.value)
     }, [])
 
-    const handleCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setCode(e.target.value)
+    const handleCodeChange = useCallback((newValue: string) => {
+        setCode(newValue)
     }, [])
 
     // tRPC mutations

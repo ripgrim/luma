@@ -10,6 +10,8 @@ import {
     CardTitle
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp"
 import { trpc } from "@/utils/trpc"
 import { type FormEvent, useState } from "react"
 import { toast } from "sonner"
@@ -183,15 +185,21 @@ export function EarlyAccessForm() {
                             <label htmlFor="code" className="font-medium text-sm leading-none">
                                 Verification Code
                             </label>
-                            <Input
-                                id="code"
-                                type="text"
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                placeholder="Enter 6-digit code"
+                            <InputOTP
                                 maxLength={6}
-                                className="text-center text-lg tracking-widest"
-                            />
+                                pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                                value={code}
+                                onChange={(e) => setCode(e)}
+                            >
+                                <InputOTPGroup>
+                                    <InputOTPSlot index={0} />
+                                    <InputOTPSlot index={1} />
+                                    <InputOTPSlot index={2} />
+                                    <InputOTPSlot index={3} />
+                                    <InputOTPSlot index={4} />
+                                    <InputOTPSlot index={5} />
+                                </InputOTPGroup>
+                            </InputOTP>
                             {codeError && (
                                 <p className="font-medium text-red-500 text-sm">{codeError}</p>
                             )}
