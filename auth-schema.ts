@@ -94,3 +94,16 @@ export const earlyAccess = pgTable("early_access", {
     emailVerified: boolean("email_verified").notNull().default(false),
     hasUsedTicket: text("has_used_ticket").default("")
 })
+
+// export const tradeContacts = pgTable("trade_contacts", {
+//  id: uuid("id").primaryKey().defaultRandom(),
+//  userId: text("user_id") // The user who owns this contact entry
+//      .notNull()
+//      .references(() => users.id, { onDelete: "cascade" }),
+//  contactRobloxId: text("contact_roblox_id").notNull(), // The Roblox ID of the trade partner
+//  contactUsername: text("contact_username").notNull(), // Roblox username of the partner
+//  contactDisplayName: text("contact_display_name"), // Roblox display name of the partner
+//  lastInteractionAt: timestamp("last_interaction_at").defaultNow().notNull(), // Timestamp of the last trade or interaction
+//  createdAt: timestamp("created_at").defaultNow().notNull(),
+//  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+// });
