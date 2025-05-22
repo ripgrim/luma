@@ -196,6 +196,12 @@ const VerificationSuccess = memo(({ userExists }: { userExists?: boolean }) => (
 ))
 VerificationSuccess.displayName = "VerificationSuccess"
 
+/**
+ * Renders the hero section of the landing page with branding, a headline, and a "Start Trading" button that navigates to the dashboard.
+ *
+ * @remark
+ * The section always displays the same content regardless of authentication or verification status.
+ */
 export function HeroSection() {
     const router = useRouter()
 

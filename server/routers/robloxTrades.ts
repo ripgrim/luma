@@ -630,7 +630,16 @@ async function storeTrades(userId: string, tradeList: any[], tradeType: string) 
     }
 }
 
-// Helper function to store detailed trade data
+/**
+ * Stores or updates detailed trade information and associated trade items for a user in the database.
+ *
+ * Determines the trade type based on the trade status and the authenticated user's role in the trade, and ensures all trade metadata and items are accurately recorded. Existing trade records and items are updated or replaced as needed.
+ *
+ * @param userId - The authenticated user's Roblox user ID.
+ * @param tradeData - The validated detailed trade data from the Roblox API.
+ *
+ * @throws {Error} If the trade cannot be inserted or updated in the database.
+ */
 async function storeDetailedTrade(userId: string, tradeData: z.infer<typeof detailedTradeSchema>) {
     // 'tradeData' here is the validated output from detailedTradeSchema
     console.log(`[storeDetailedTrade] Storing detailed trade ID ${tradeData.id} for user ${userId}`)

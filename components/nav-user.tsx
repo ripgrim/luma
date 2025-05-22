@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
+/**
+ * Renders a user navigation menu in the sidebar with profile details and account actions.
+ *
+ * Displays the user's avatar, name, and email, and provides a dropdown menu with options for upgrading, account management, billing, notifications, and logging out. Selecting "Log out" navigates the user to the sign-out page.
+ *
+ * @param user - The user's profile information, including name, email, and avatar URL.
+ */
 export function NavUser({
     user
 }: {

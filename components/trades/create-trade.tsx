@@ -5,6 +5,11 @@ import TradeComposer from '@/components/trades/TradeComposer';
 
 import { useSession } from '@/hooks/auth-hooks';
 
+/****
+ * Renders the trade creation page with a close button and the trade composer form.
+ *
+ * Displays a vertically centered layout containing a styled close button and the {@link TradeComposer} component for composing a new trade.
+ */
 export default function CreateTrade() {
     const { data: session } = useSession();
 

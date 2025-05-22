@@ -26,6 +26,14 @@ interface NavItem {
     items?: NavItem[];
 }
 
+/**
+ * Renders a sidebar navigation group with support for collapsible dropdown menus and active state highlighting.
+ *
+ * Displays a labeled group of navigation items, each rendered as either a direct link or a collapsible dropdown containing sub-items. Active items are highlighted based on the current route, and optional count badges are shown for items and sub-items.
+ *
+ * @param items - The navigation items to display, each optionally supporting dropdowns and nested sub-items.
+ * @param groupTitle - The label displayed at the top of the navigation group.
+ */
 export function NavMain({
     items,
     groupTitle

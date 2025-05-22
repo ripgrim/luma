@@ -35,6 +35,13 @@ export const viewport: Viewport = {
     ]
 }
 
+/**
+ * Root layout component for the application, providing global providers, authentication gating, and consistent UI structure.
+ *
+ * Wraps the application in authentication and UI context providers, applies global fonts and styles, and ensures only authenticated users can access the main content. Redirects unauthenticated users to the sign-in page.
+ *
+ * @param children - The main content to render within the authenticated layout.
+ */
 export default function RootLayout({
     children
 }: Readonly<{

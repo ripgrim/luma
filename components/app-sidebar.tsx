@@ -82,6 +82,11 @@ const sidebarData = {
     ]
 };
 
+/**
+ * Renders the main application sidebar with user profile, grouped navigation, and footer menu.
+ *
+ * The sidebar includes dynamic user information, core and management navigation sections, and a "New Trade" button that opens a trade composer dialog. The open state of the dialog is synchronized with a URL query parameter. Footer items are highlighted based on the current route.
+ */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { user } = useSession()
     const isMobile = useIsMobile();

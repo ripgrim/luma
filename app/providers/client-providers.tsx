@@ -17,6 +17,13 @@ import { Toaster, toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 import { PostHogProvider } from "../../providers/PostHogProvider"
 
+/**
+ * Composes and provides all client-side context providers and utilities for the application.
+ *
+ * Wraps the given {@link children} with providers for analytics, authentication, theming, React Query, tRPC, and other client-side features, ensuring global error handling and UI context are available throughout the app.
+ *
+ * @param children - React nodes to be rendered within the composed providers.
+ */
 export function ClientProviders({ children }: { children: ReactNode }) {
     // Create a client-side query client
     const [queryClient] = useState(
